@@ -12,6 +12,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface HeaderProps {
     user?: {
@@ -39,7 +40,7 @@ export function Header({ user }: HeaderProps) {
         .toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U';
 
     return (
-        <header className="fixed top-0 left-0 lg:left-60 right-0 z-30 h-14 bg-white/80 backdrop-blur-md border-b border-border">
+        <header className="fixed top-0 left-0 lg:left-60 right-0 z-30 h-14 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="flex h-full items-center justify-between px-4 lg:px-6">
                 {/* Title - hidden on mobile to save space for hamburger */}
                 <div className="flex items-center gap-3 ml-12 lg:ml-0">
@@ -48,7 +49,8 @@ export function Header({ user }: HeaderProps) {
                     </h1>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                    <ThemeToggle />
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
@@ -59,7 +61,7 @@ export function Header({ user }: HeaderProps) {
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56 bg-white border-border shadow-lg" align="end">
+                        <DropdownMenuContent className="w-56 bg-popover border-border shadow-lg" align="end">
                             <DropdownMenuLabel className="text-foreground">
                                 <div className="flex flex-col space-y-0.5">
                                     <p className="text-sm font-medium">{user?.user_metadata?.full_name || 'User'}</p>
@@ -83,3 +85,4 @@ export function Header({ user }: HeaderProps) {
         </header>
     );
 }
+
