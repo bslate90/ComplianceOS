@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import mammoth from 'mammoth';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse');
-
 // Types for extracted data
 interface ExtractedNutritionData {
     name?: string;
@@ -79,15 +76,10 @@ function parseNutritionFromText(rawText: string): ExtractedNutritionData {
     };
 }
 
-// Extract text from PDF
-async function extractPdfText(buffer: Buffer): Promise<string> {
-    try {
-        const data = await pdfParse(buffer);
-        return data.text;
-    } catch (error) {
-        console.error('PDF extraction error:', error);
-        throw new Error('Failed to extract text from PDF');
-    }
+// Extract text from PDF - disabled in serverless environment
+// pdf-parse requires native dependencies (canvas, DOMMatrix) not available in Vercel
+async function extractPdfText(_buffer: Buffer): Promise<string> {
+    throw new Error('PDF parsing is not currently supported. Please upload a Word document (.doc or .docx) instead.');
 }
 
 // Extract text from Word document
