@@ -1,0 +1,167 @@
+-- Seed FDA Compliance Rules
+-- This script populates the compliance_rules table with all FDA NFP requirements
+-- Run this in the Supabase SQL editor after migration 004 is applied
+
+-- Clear any existing FDA rules (optional - comment out if you want to keep existing rules)
+-- DELETE FROM compliance_rules WHERE organization_id IS NULL;
+
+-- Insert NFP Format Rules (4 rules)
+INSERT INTO compliance_rules (organization_id, rule_type, rule_category, rule_name, description, requirements, cfr_reference, guidance_reference, severity, applicable_to, active)
+VALUES
+-- Standard Vertical Format
+(NULL, 'nfp_format', 'required', 'Standard Vertical Format', 'Standard vertical Nutrition Facts Panel for packages with adequate vertical space',
+'{"min_package_surface_area": 40, "min_vertical_space": 3, "format_type": "standard_vertical", "font_sizes": {"nutrition_facts_header": 16, "calories_value": 22, "serving_size": 10, "nutrient_names": 8, "nutrient_values": 8, "footnote": 6}}'::jsonb,
+'21 CFR 101.9(d)(1)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', NULL, true),
+
+-- Tabular Format
+(NULL, 'nfp_format', 'conditional', 'Tabular Format', 'Tabular format for packages with 20-40 sq in surface area or limited vertical space',
+'{"min_package_surface_area": 20, "max_package_surface_area": 40, "format_type": "tabular", "font_sizes": {"nutrition_facts_header": 10, "calories_value": 14, "serving_size": 9, "nutrient_names": 8, "nutrient_values": 8}}'::jsonb,
+'21 CFR 101.9(d)(11)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'warning',
+'{"package_surface_area": {"min": 20, "max": 40}, "vertical_space_limited": true}'::jsonb, true),
+
+-- Linear Format
+(NULL, 'nfp_format', 'conditional', 'Linear Format', 'Linear format for small packages (<40 sq in) where vertical/tabular formats do not fit',
+'{"max_package_surface_area": 40, "format_type": "linear", "font_sizes": {"nutrition_facts_header": 10, "calories_value": 14, "serving_size": 9, "all_other_text": 8}}'::jsonb,
+'21 CFR 101.9(d)(13)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'warning',
+'{"package_surface_area": {"max": 40}, "cannot_accommodate_vertical_or_tabular": true}'::jsonb, true),
+
+-- Simplified Format
+(NULL, 'nfp_format', 'conditional', 'Simplified Format', 'Simplified format for small packages (<12 sq in total surface area)',
+'{"max_package_surface_area": 12, "format_type": "simplified", "allowed_nutrients": ["calories", "total_fat", "total_carbohydrates", "protein", "sodium"]}'::jsonb,
+'21 CFR 101.9(f)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'info',
+'{"package_surface_area": {"max": 12}}'::jsonb, true);
+
+-- Insert Serving Size Rules (3 rules)
+INSERT INTO compliance_rules (organization_id, rule_type, rule_category, rule_name, description, requirements, cfr_reference, guidance_reference, severity, active)
+VALUES
+-- Serving Size Gram/mL Rounding
+(NULL, 'serving_size', 'required', 'Serving Size Gram/mL Rounding', 'Rounding rules for gram/milliliter quantities in serving sizes',
+'{"rounding_rules": [{"range": [0, 2], "increment": 0.1, "unit": "g or mL"}, {"range": [2, 5], "increment": 0.5, "unit": "g or mL"}, {"range": [5, 999999], "increment": 1, "unit": "g or mL (whole number)"}]}'::jsonb,
+'21 CFR 101.9(b)(7)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+-- Servings Per Container Rounding
+(NULL, 'serving_size', 'required', 'Servings Per Container Rounding', 'Rounding rules for number of servings per container',
+'{"rounding_rules": [{"range": [0, 2], "increment": 0.1, "prefix": "about"}, {"range": [2, 5], "increment": 0.5, "prefix": "about"}, {"range": [5, 999999], "increment": 1, "prefix": "about"}]}'::jsonb,
+'21 CFR 101.9(b)(8)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+-- Single-Serving Container
+(NULL, 'serving_size', 'required', 'Single-Serving Container', 'Products <200% of reference amount must be labeled as single serving',
+'{"max_reference_amount_percentage": 200, "must_label_as_single_serving": true}'::jsonb,
+'21 CFR 101.9(b)(6)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true);
+
+-- Insert Nutrient Content Claim Rules - FREE CLAIMS (6 rules)
+INSERT INTO compliance_rules (organization_id, rule_type, rule_category, rule_name, description, requirements, cfr_reference, guidance_reference, severity, active)
+VALUES
+(NULL, 'nutrient_content_claim', 'optional', 'Calorie Free', 'Product contains less than 5 calories per RACC and labeled serving',
+'{"claim_terms": ["calorie free", "free of calories", "no calories", "zero calories"], "max_per_racc": 5, "max_per_serving": 5, "nutrient": "calories"}'::jsonb,
+'21 CFR 101.60(b)(1)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Fat Free', 'Product contains less than 0.5g fat per RACC and labeled serving',
+'{"claim_terms": ["fat free", "free of fat", "no fat", "zero fat"], "max_per_racc": 0.5, "max_per_serving": 0.5, "nutrient": "total_fat", "unit": "g"}'::jsonb,
+'21 CFR 101.62(b)(1)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Saturated Fat Free', 'Product contains less than 0.5g saturated fat and less than 0.5g trans fat per RACC',
+'{"claim_terms": ["saturated fat free", "no saturated fat"], "max_saturated_fat_per_racc": 0.5, "max_trans_fat_per_racc": 0.5, "nutrient": "saturated_fat", "unit": "g"}'::jsonb,
+'21 CFR 101.62(b)(2)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Cholesterol Free', 'Product contains less than 2mg cholesterol per RACC',
+'{"claim_terms": ["cholesterol free", "no cholesterol", "zero cholesterol"], "max_per_racc": 2, "max_saturated_fat_per_racc": 2, "nutrient": "cholesterol", "unit": "mg"}'::jsonb,
+'21 CFR 101.62(d)(1)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Sodium Free', 'Product contains less than 5mg sodium per RACC',
+'{"claim_terms": ["sodium free", "no sodium", "zero sodium", "salt free"], "max_per_racc": 5, "nutrient": "sodium", "unit": "mg"}'::jsonb,
+'21 CFR 101.61(b)(1)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Sugar Free', 'Product contains less than 0.5g sugars per RACC',
+'{"claim_terms": ["sugar free", "no sugar", "zero sugar", "sugarless"], "max_per_racc": 0.5, "nutrient": "total_sugars", "unit": "g"}'::jsonb,
+'21 CFR 101.60(c)(1)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true);
+
+-- Insert Nutrient Content Claim Rules - LOW CLAIMS (5 rules)
+INSERT INTO compliance_rules (organization_id, rule_type, rule_category, rule_name, description, requirements, cfr_reference, guidance_reference, severity, active)
+VALUES
+(NULL, 'nutrient_content_claim', 'optional', 'Low Calorie', 'Product contains 40 calories or less per RACC',
+'{"claim_terms": ["low calorie", "few calories", "low in calories"], "max_per_racc": 40, "max_per_100g_for_meals": 120, "nutrient": "calories"}'::jsonb,
+'21 CFR 101.60(b)(2)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Low Fat', 'Product contains 3g or less fat per RACC',
+'{"claim_terms": ["low fat", "low in fat"], "max_per_racc": 3, "max_per_100g_for_meals": 3, "max_calories_from_fat_for_meals": 30, "nutrient": "total_fat", "unit": "g"}'::jsonb,
+'21 CFR 101.62(b)(2)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Low Saturated Fat', 'Product contains 1g or less saturated fat per RACC and ≤15% calories from saturated fat',
+'{"claim_terms": ["low saturated fat", "low in saturated fat"], "max_per_racc": 1, "max_calories_from_saturated_fat": 15, "nutrient": "saturated_fat", "unit": "g"}'::jsonb,
+'21 CFR 101.62(c)(2)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Low Cholesterol', 'Product contains 20mg or less cholesterol per RACC',
+'{"claim_terms": ["low cholesterol", "low in cholesterol"], "max_per_racc": 20, "max_saturated_fat_per_racc": 2, "nutrient": "cholesterol", "unit": "mg"}'::jsonb,
+'21 CFR 101.62(d)(2)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Low Sodium', 'Product contains 140mg or less sodium per RACC',
+'{"claim_terms": ["low sodium", "low in sodium"], "max_per_racc": 140, "nutrient": "sodium", "unit": "mg"}'::jsonb,
+'21 CFR 101.61(b)(2)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Very Low Sodium', 'Product contains 35mg or less sodium per RACC',
+'{"claim_terms": ["very low sodium", "very low in sodium"], "max_per_racc": 35, "nutrient": "sodium", "unit": "mg"}'::jsonb,
+'21 CFR 101.61(b)(3)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true);
+
+-- Insert Nutrient Content Claim Rules - REDUCED/LESS and LIGHT CLAIMS (6 rules)
+INSERT INTO compliance_rules (organization_id, rule_type, rule_category, rule_name, description, requirements, cfr_reference, guidance_reference, severity, active)
+VALUES
+(NULL, 'nutrient_content_claim', 'optional', 'Reduced/Less Calories', 'Product contains at least 25% fewer calories than reference food',
+'{"claim_terms": ["reduced calorie", "fewer calories", "lower calorie", "less calories"], "min_reduction_percentage": 25, "nutrient": "calories"}'::jsonb,
+'21 CFR 101.60(b)(3)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Reduced/Less Fat', 'Product contains at least 25% less fat than reference food',
+'{"claim_terms": ["reduced fat", "less fat", "lower fat"], "min_reduction_percentage": 25, "nutrient": "total_fat"}'::jsonb,
+'21 CFR 101.62(b)(4)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Reduced/Less Saturated Fat', 'Product contains at least 25% less saturated fat than reference food',
+'{"claim_terms": ["reduced saturated fat", "less saturated fat"], "min_reduction_percentage": 25, "nutrient": "saturated_fat"}'::jsonb,
+'21 CFR 101.62(c)(3)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Reduced/Less Sodium', 'Product contains at least 25% less sodium than reference food',
+'{"claim_terms": ["reduced sodium", "less sodium", "lower sodium"], "min_reduction_percentage": 25, "nutrient": "sodium"}'::jsonb,
+'21 CFR 101.61(b)(4)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Light/Lite (Fat)', 'Product has 50% less fat if ≥50% calories from fat, or meets low-fat definition',
+'{"claim_terms": ["light", "lite"], "nutrient": "total_fat", "conditions": [{"if": "calories_from_fat >= 50%", "then": "fat_reduction >= 50%"}, {"if": "calories_from_fat < 50%", "then": "fat_reduction >= 50% OR calorie_reduction >= 33.3%"}]}'::jsonb,
+'21 CFR 101.56(b)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Light in Sodium', 'Product contains 50% less sodium than reference food',
+'{"claim_terms": ["light in sodium", "lite in sodium", "lightly salted"], "min_reduction_percentage": 50, "nutrient": "sodium"}'::jsonb,
+'21 CFR 101.56(d)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true);
+
+-- Insert Nutrient Content Claim Rules - GOOD SOURCE/HIGH and HEALTHY (3 rules)
+INSERT INTO compliance_rules (organization_id, rule_type, rule_category, rule_name, description, requirements, cfr_reference, guidance_reference, severity, active)
+VALUES
+(NULL, 'nutrient_content_claim', 'optional', 'Good Source', 'Product contains 10-19% of Daily Value per RACC',
+'{"claim_terms": ["good source", "contains", "provides"], "min_dv_percentage": 10, "max_dv_percentage": 19, "applicable_nutrients": ["protein", "vitamin_d", "calcium", "iron", "potassium", "dietary_fiber"]}'::jsonb,
+'21 CFR 101.54(b)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'High/Excellent Source', 'Product contains 20% or more of Daily Value per RACC',
+'{"claim_terms": ["high", "rich in", "excellent source"], "min_dv_percentage": 20, "applicable_nutrients": ["protein", "vitamin_d", "calcium", "iron", "potassium", "dietary_fiber"]}'::jsonb,
+'21 CFR 101.54(b)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true),
+
+(NULL, 'nutrient_content_claim', 'optional', 'Healthy (2025 Updated)', 'Product meets updated "healthy" nutrient content claim criteria (effective 2025)',
+'{"claim_terms": ["healthy"], "effective_date": "2025-04-28", "compliance_deadline": "2028-02-25", "must_contain_food_group": true, "food_groups": ["fruit", "vegetables", "grains", "fat_free_low_fat_dairy", "protein_foods"], "nutrient_limits": {"added_sugars_dv_max": 20, "sodium_dv_max": 30, "saturated_fat_dv_max": 20}, "no_limits_on": ["total_fat", "cholesterol"]}'::jsonb,
+'21 CFR 101.65(d) (2025 Final Rule)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true);
+
+-- Insert Mandatory Nutrients Rule (1 rule)
+INSERT INTO compliance_rules (organization_id, rule_type, rule_category, rule_name, description, requirements, cfr_reference, guidance_reference, severity, active)
+VALUES
+(NULL, 'mandatory_nutrients', 'required', 'Mandatory Nutrient Declaration', 'All mandatory nutrients that must appear on NFP in prescribed order',
+'{"nutrients_in_order": [{"name": "calories", "display": "Calories", "unit": "kcal", "mandatory": true}, {"name": "total_fat", "display": "Total Fat", "unit": "g", "mandatory": true, "show_dv": true}, {"name": "saturated_fat", "display": "Saturated Fat", "unit": "g", "mandatory": true, "show_dv": true, "indent_level": 1}, {"name": "trans_fat", "display": "Trans Fat", "unit": "g", "mandatory": true, "show_dv": false, "indent_level": 1}, {"name": "cholesterol", "display": "Cholesterol", "unit": "mg", "mandatory": true, "show_dv": true}, {"name": "sodium", "display": "Sodium", "unit": "mg", "mandatory": true, "show_dv": true}, {"name": "total_carbohydrates", "display": "Total Carbohydrate", "unit": "g", "mandatory": true, "show_dv": true}, {"name": "dietary_fiber", "display": "Dietary Fiber", "unit": "g", "mandatory": true, "show_dv": true, "indent_level": 1}, {"name": "total_sugars", "display": "Total Sugars", "unit": "g", "mandatory": true, "show_dv": false, "indent_level": 1}, {"name": "added_sugars", "display": "Includes Added Sugars", "unit": "g", "mandatory": true, "show_dv": true, "indent_level": 2}, {"name": "protein", "display": "Protein", "unit": "g", "mandatory": true, "show_dv": false}, {"name": "vitamin_d", "display": "Vitamin D", "unit": "mcg", "mandatory": true, "show_dv": true}, {"name": "calcium", "display": "Calcium", "unit": "mg", "mandatory": true, "show_dv": true}, {"name": "iron", "display": "Iron", "unit": "mg", "mandatory": true, "show_dv": true}, {"name": "potassium", "display": "Potassium", "unit": "mg", "mandatory": true, "show_dv": true}]}'::jsonb,
+'21 CFR 101.9(c)', 'FDA Food Labeling Guide (https://www.fda.gov/media/81606/download)', 'error', true);
+
+-- Verify the seeding
+SELECT
+    rule_type,
+    COUNT(*) as count
+FROM compliance_rules
+WHERE organization_id IS NULL
+GROUP BY rule_type
+ORDER BY rule_type;
+
+-- Show total count
+SELECT COUNT(*) as total_fda_rules
+FROM compliance_rules
+WHERE organization_id IS NULL;

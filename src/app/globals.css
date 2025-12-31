@@ -1,0 +1,441 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+/* ========================================
+   SOFT UTILITARIAN THEME
+   Muted off-whites and gentle grays
+   ======================================== */
+
+:root {
+  --radius: 0.5rem;
+
+  /* Base colors - Soft and muted (not pure white) */
+  --background: oklch(0.965 0.005 250);
+  --foreground: oklch(0.18 0.02 250);
+
+  /* Card - Slightly warm white */
+  --card: oklch(0.99 0.003 80);
+  --card-foreground: oklch(0.18 0.02 250);
+
+  /* Popover */
+  --popover: oklch(0.99 0.003 80);
+  --popover-foreground: oklch(0.18 0.02 250);
+
+  /* Primary - Teal accent */
+  --primary: oklch(0.45 0.14 175);
+  --primary-foreground: oklch(0.98 0 0);
+
+  /* Secondary - Cool gray */
+  --secondary: oklch(0.94 0.008 250);
+  --secondary-foreground: oklch(0.28 0.02 250);
+
+  /* Muted - Soft gray */
+  --muted: oklch(0.92 0.008 250);
+  --muted-foreground: oklch(0.42 0.02 250);
+
+  /* Accent */
+  --accent: oklch(0.94 0.008 250);
+  --accent-foreground: oklch(0.18 0.02 250);
+
+  /* Destructive - Soft red */
+  --destructive: oklch(0.58 0.20 25);
+
+  /* Borders - Subtle cool gray */
+  --border: oklch(0.88 0.008 250);
+  --input: oklch(0.92 0.008 250);
+  --ring: oklch(0.50 0.14 175);
+
+  /* Charts - Muted but colorful accents */
+  --chart-1: oklch(0.52 0.16 250);
+  --chart-2: oklch(0.50 0.14 175);
+  --chart-3: oklch(0.52 0.14 145);
+  --chart-4: oklch(0.55 0.16 300);
+  --chart-5: oklch(0.58 0.16 45);
+
+  /* Sidebar - Soft warm white */
+  --sidebar: oklch(0.98 0.005 80);
+  --sidebar-foreground: oklch(0.22 0.02 250);
+  --sidebar-primary: oklch(0.45 0.14 175);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.94 0.015 175);
+  --sidebar-accent-foreground: oklch(0.22 0.02 250);
+  --sidebar-border: oklch(0.88 0.008 250);
+  --sidebar-ring: oklch(0.45 0.14 175);
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* ========================================
+   MOBILE OPTIMIZATIONS
+   ======================================== */
+
+.card-text-wrap {
+  @apply break-words overflow-hidden;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.card-auto {
+  @apply min-h-0 h-auto;
+}
+
+@media (max-width: 640px) {
+  .mobile-compact {
+    @apply p-3 gap-2;
+  }
+
+  .mobile-tight {
+    @apply p-2 gap-1;
+  }
+
+  .mobile-text-sm {
+    @apply text-sm;
+  }
+
+  .mobile-hide {
+    @apply hidden;
+  }
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.2s ease-out forwards;
+}
+
+.stagger-children>* {
+  opacity: 0;
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.stagger-children>*:nth-child(1) {
+  animation-delay: 0.02s;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 0.06s;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 0.08s;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 0.10s;
+}
+
+.stagger-children>*:nth-child(6) {
+  animation-delay: 0.12s;
+}
+
+.transition-smooth {
+  @apply transition-all duration-150 ease-out;
+}
+
+/* ========================================
+   SCROLLBAR
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.92 0 0);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.72 0.01 250);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.62 0.01 250);
+}
+
+/* ========================================
+   CARD ACCENT BACKGROUNDS - Subtle pastels
+   ======================================== */
+
+.card-accent-blue {
+  background: linear-gradient(135deg, oklch(0.94 0.025 250) 0%, oklch(0.96 0.015 240) 100%);
+  border-color: oklch(0.85 0.04 250);
+}
+
+.card-accent-teal {
+  background: linear-gradient(135deg, oklch(0.94 0.025 175) 0%, oklch(0.96 0.015 165) 100%);
+  border-color: oklch(0.85 0.04 175);
+}
+
+.card-accent-purple {
+  background: linear-gradient(135deg, oklch(0.94 0.025 300) 0%, oklch(0.96 0.015 290) 100%);
+  border-color: oklch(0.85 0.04 300);
+}
+
+.card-accent-green {
+  background: linear-gradient(135deg, oklch(0.94 0.025 145) 0%, oklch(0.96 0.015 135) 100%);
+  border-color: oklch(0.85 0.04 145);
+}
+
+.card-accent-orange {
+  background: linear-gradient(135deg, oklch(0.95 0.03 60) 0%, oklch(0.97 0.02 50) 100%);
+  border-color: oklch(0.88 0.05 55);
+}
+
+/* ========================================
+   ICON BACKGROUNDS - Rich but not too bright
+   ======================================== */
+
+.icon-bg-blue {
+  background: linear-gradient(135deg, oklch(0.52 0.16 250), oklch(0.58 0.14 230));
+}
+
+.icon-bg-teal {
+  background: linear-gradient(135deg, oklch(0.50 0.14 175), oklch(0.55 0.12 185));
+}
+
+.icon-bg-purple {
+  background: linear-gradient(135deg, oklch(0.55 0.16 300), oklch(0.60 0.14 315));
+}
+
+.icon-bg-green {
+  background: linear-gradient(135deg, oklch(0.52 0.14 145), oklch(0.58 0.12 155));
+}
+
+.icon-bg-orange {
+  background: linear-gradient(135deg, oklch(0.60 0.16 50), oklch(0.65 0.14 40));
+}
+
+/* ========================================
+   SHADOWS - Soft and subtle
+   ======================================== */
+
+.shadow-card {
+  box-shadow:
+    0 1px 2px oklch(0.30 0.02 250 / 0.04),
+    0 2px 4px oklch(0.30 0.02 250 / 0.03);
+}
+
+.shadow-card-hover {
+  box-shadow:
+    0 2px 4px oklch(0.30 0.02 250 / 0.05),
+    0 4px 12px oklch(0.30 0.02 250 / 0.06);
+}
+
+.shadow-soft {
+  box-shadow: 0 1px 3px oklch(0.30 0.02 250 / 0.04);
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background;
+}
+
+.skeleton {
+  @apply bg-muted animate-pulse rounded;
+}
+
+.hover-lift {
+  @apply transition-all duration-150;
+}
+
+.hover-lift:hover {
+  @apply -translate-y-0.5;
+  box-shadow:
+    0 4px 8px oklch(0.30 0.02 250 / 0.06),
+    0 8px 16px oklch(0.30 0.02 250 / 0.04);
+}
+
+/* Status colors - Muted versions */
+.status-success {
+  @apply text-green-700 bg-green-50/80;
+}
+
+.status-warning {
+  @apply text-amber-700 bg-amber-50/80;
+}
+
+.status-error {
+  @apply text-red-700 bg-red-50/80;
+}
+
+.status-info {
+  @apply text-blue-700 bg-blue-50/80;
+}
+
+/* ========================================
+   IMPROVED CARD LAYOUT
+   ======================================== */
+
+/* Stat card - compact and informative */
+.stat-card {
+  @apply relative overflow-hidden rounded-lg border;
+  background: oklch(0.99 0.003 80);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-card-blue::before {
+  background: linear-gradient(90deg, oklch(0.52 0.16 250), oklch(0.58 0.14 230));
+}
+
+.stat-card-teal::before {
+  background: linear-gradient(90deg, oklch(0.50 0.14 175), oklch(0.55 0.12 185));
+}
+
+.stat-card-green::before {
+  background: linear-gradient(90deg, oklch(0.52 0.14 145), oklch(0.58 0.12 155));
+}
+
+.stat-card-purple::before {
+  background: linear-gradient(90deg, oklch(0.55 0.16 300), oklch(0.60 0.14 315));
+}
+
+.stat-card-orange::before {
+  background: linear-gradient(90deg, oklch(0.60 0.16 50), oklch(0.65 0.14 40));
+}
+
+/* Info badge styling */
+.info-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+}
+
+.info-badge-blue {
+  background: oklch(0.94 0.03 250);
+  color: oklch(0.45 0.12 250);
+}
+
+.info-badge-teal {
+  background: oklch(0.94 0.03 175);
+  color: oklch(0.40 0.10 175);
+}
+
+.info-badge-green {
+  background: oklch(0.94 0.03 145);
+  color: oklch(0.40 0.10 145);
+}
+
+.info-badge-amber {
+  background: oklch(0.95 0.04 85);
+  color: oklch(0.48 0.12 65);
+}
+
+.info-badge-gray {
+  background: oklch(0.92 0.008 250);
+  color: oklch(0.50 0.02 250);
+}
