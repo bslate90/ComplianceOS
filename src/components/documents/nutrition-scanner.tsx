@@ -20,13 +20,6 @@ interface NutritionScannerProps {
 
 type ScannerStep = 'upload' | 'compare' | 'review';
 
-// Lazy load PDF.js only when needed
-async function getPdfJs() {
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-    return pdfjsLib;
-}
-
 export function NutritionScanner({ onScanComplete, onCancel }: NutritionScannerProps) {
     const [step, setStep] = useState<ScannerStep>('upload');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -50,70 +43,6 @@ export function NutritionScanner({ onScanComplete, onCancel }: NutritionScannerP
         return result.data.text;
     }, []);
 
-    // Extract embedded text from PDF (works for digital PDFs)
-    const extractPdfText = useCallback(async (file: File): Promise<string> => {
-        setStatusMessage('Extracting text from PDF...');
-        const pdfjsLib = await getPdfJs();
-
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-        let fullText = '';
-        const numPages = Math.min(pdf.numPages, 5);
-
-        for (let i = 1; i <= numPages; i++) {
-            setStatusMessage(`Reading page ${i} of ${numPages}...`);
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-
-            // Extract text items and join (filter for items with str property)
-            const pageText = textContent.items
-                .map((item) => ('str' in item ? item.str : ''))
-                .filter(Boolean)
-                .join(' ');
-
-            fullText += pageText + '\n';
-        }
-
-        console.log('PDF Extracted Text:', fullText.substring(0, 500));
-        return fullText;
-    }, []);
-
-    // OCR a PDF by rendering pages to canvas (for scanned PDFs)
-    const ocrPdf = useCallback(async (file: File): Promise<string> => {
-        setStatusMessage('Scanning PDF with OCR...');
-        const pdfjsLib = await getPdfJs();
-
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-        let fullText = '';
-        const numPages = Math.min(pdf.numPages, 3);
-
-        for (let i = 1; i <= numPages; i++) {
-            setStatusMessage(`OCR scanning page ${i} of ${numPages}...`);
-            const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 2 });
-
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d')!;
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            // @ts-expect-error - PDF.js types are incomplete
-            await page.render({
-                canvasContext: context,
-                viewport: viewport,
-            }).promise;
-
-            const imageData = canvas.toDataURL('image/png');
-            const pageText = await processImageWithOCR(imageData);
-            fullText += pageText + '\n';
-        }
-
-        return fullText;
-    }, [processImageWithOCR]);
-
     const handleFileAccepted = useCallback(async (file: File) => {
         setIsProcessing(true);
         setProgress(0);
@@ -126,20 +55,8 @@ export function NutritionScanner({ onScanComplete, onCancel }: NutritionScannerP
             let rawText = '';
 
             if (file.type === 'application/pdf') {
-                // First try to extract embedded text
-                const embeddedText = await extractPdfText(file);
-
-                // Check if we got meaningful text (more than just whitespace)
-                const cleanText = embeddedText.replace(/\s+/g, ' ').trim();
-
-                if (cleanText.length > 50) {
-                    console.log('Using embedded PDF text');
-                    rawText = embeddedText;
-                } else {
-                    // PDF is likely scanned - use OCR
-                    console.log('PDF appears to be scanned, using OCR');
-                    rawText = await ocrPdf(file);
-                }
+                // PDF processing is not supported in production
+                throw new Error('PDF scanning is not currently supported. Please upload an image file (JPG, PNG) instead.');
             } else {
                 // Image file - use OCR
                 const imageUrl = URL.createObjectURL(file);
@@ -167,7 +84,7 @@ export function NutritionScanner({ onScanComplete, onCancel }: NutritionScannerP
             setIsProcessing(false);
             setProgress(0);
         }
-    }, [processImageWithOCR, extractPdfText, ocrPdf, compareToUSDA]);
+    }, [processImageWithOCR, compareToUSDA]);
 
     const handleUSDASelect = (usdaData: ExtractedNutritionData, _fdcId: number) => {
         setEditedData({
