@@ -40,10 +40,18 @@ export async function updateSession(request: NextRequest) {
     // Protected routes
     const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/register');
+    const isAuthCallbackRoute = request.nextUrl.pathname.startsWith('/auth/callback');
     const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
         request.nextUrl.pathname.startsWith('/ingredients') ||
         request.nextUrl.pathname.startsWith('/recipes') ||
-        request.nextUrl.pathname.startsWith('/labels');
+        request.nextUrl.pathname.startsWith('/labels') ||
+        request.nextUrl.pathname.startsWith('/suppliers') ||
+        request.nextUrl.pathname.startsWith('/organization');
+
+    // Allow auth callback to proceed without redirect
+    if (isAuthCallbackRoute) {
+        return supabaseResponse;
+    }
 
     if (!user && isDashboardRoute) {
         const url = request.nextUrl.clone();
