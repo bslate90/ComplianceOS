@@ -1,6 +1,12 @@
 /**
  * Label PDF Generator
  * Generates FDA-compliant Nutrition Facts Panel PDFs
+ * 
+ * Supports formats:
+ * - Standard Vertical: Full NFP with all nutrients
+ * - Simplified: Omits nutrients that are below significance thresholds per FDA 21 CFR 101.9
+ * - Tabular: Side-by-side format (future)
+ * - Linear: Inline format for small packages (future)
  */
 
 import React from 'react'
@@ -45,14 +51,14 @@ interface LabelPDFProps {
   servingSize: string
   servingsPerContainer: string | number
   nutritionData: NutritionData
-  format?: 'standard_vertical' | 'tabular' | 'linear'
+  format?: 'standard_vertical' | 'simplified' | 'tabular' | 'linear'
   ingredientStatement?: string
   allergenStatement?: string
   companyName?: string
   companyAddress?: string
 }
 
-// Daily Values for % calculations
+// Daily Values for % calculations (FDA 2020 values)
 const DAILY_VALUES = {
   totalFat: 78,
   saturatedFat: 20,
@@ -67,6 +73,25 @@ const DAILY_VALUES = {
   potassium: 4700,
 }
 
+// FDA Simplified Format Thresholds (21 CFR 101.9)
+// Nutrients can be omitted if below these amounts per serving AND labeled as "Not a significant source"
+const SIMPLIFIED_THRESHOLDS = {
+  totalFat: 0.5,        // g - can omit if <0.5g
+  saturatedFat: 0.5,    // g
+  transFat: 0.5,        // g
+  cholesterol: 2,       // mg - can omit if <2mg
+  sodium: 5,            // mg - can omit if <5mg
+  totalCarbohydrates: 1, // g - can omit if <1g
+  dietaryFiber: 1,      // g
+  totalSugars: 1,       // g
+  addedSugars: 1,       // g
+  protein: 1,           // g - can omit if <1g
+  vitaminD: 0,          // mcg - can omit if 0
+  calcium: 0,           // mg
+  iron: 0,              // mg
+  potassium: 0,         // mg
+}
+
 // Calculate % Daily Value
 function calculateDV(nutrient: keyof typeof DAILY_VALUES, amount: number | string): number {
   const value = typeof amount === 'string' ? parseFloat(amount) : amount
@@ -74,7 +99,20 @@ function calculateDV(nutrient: keyof typeof DAILY_VALUES, amount: number | strin
   return Math.round((value / DAILY_VALUES[nutrient]) * 100)
 }
 
-// PDF Styles
+// Check if nutrient is below simplified threshold
+function isBelowThreshold(nutrient: keyof typeof SIMPLIFIED_THRESHOLDS, amount: number | string): boolean {
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount
+  if (isNaN(value)) return true
+  return value < SIMPLIFIED_THRESHOLDS[nutrient]
+}
+
+// Parse numeric value
+function parseValue(amount: number | string): number {
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount
+  return isNaN(value) ? 0 : value
+}
+
+// PDF Styles - Updated with inset separator bars
 const styles = StyleSheet.create({
   page: {
     padding: 20,
@@ -92,7 +130,48 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     paddingLeft: 4,
     paddingRight: 4,
-    borderBottom: '8pt solid #000',
+  },
+  // Thick separator bar with margin from edges
+  thickSeparator: {
+    height: 8,
+    backgroundColor: '#000',
+    marginLeft: 4,
+    marginRight: 4,
+    marginBottom: 2,
+  },
+  // Medium separator bar with margin from edges
+  mediumSeparator: {
+    height: 5,
+    backgroundColor: '#000',
+    marginLeft: 4,
+    marginRight: 4,
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  // Thin separator bar with margin from edges
+  thinSeparator: {
+    height: 4,
+    backgroundColor: '#000',
+    marginLeft: 4,
+    marginRight: 4,
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  // Hairline separator for between rows
+  hairlineSeparator: {
+    height: 1,
+    backgroundColor: '#000',
+    marginLeft: 4,
+    marginRight: 4,
+  },
+  // Calories thick separator (larger)
+  caloriesSeparator: {
+    height: 10,
+    backgroundColor: '#000',
+    marginLeft: 4,
+    marginRight: 4,
+    marginTop: 2,
+    marginBottom: 2,
   },
   servingInfo: {
     fontSize: 10,
@@ -100,7 +179,6 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
     paddingLeft: 4,
     paddingRight: 4,
-    borderBottom: '5pt solid #000',
   },
   servingSizeBold: {
     fontWeight: 'bold',
@@ -113,7 +191,6 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
     paddingLeft: 4,
     paddingRight: 4,
-    borderBottom: '10pt solid #000',
   },
   caloriesLabel: {
     fontSize: 10,
@@ -131,7 +208,6 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
     paddingLeft: 4,
     paddingRight: 4,
-    borderBottom: '4pt solid #000',
   },
   nutrientRow: {
     flexDirection: 'row',
@@ -141,17 +217,6 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
     paddingRight: 4,
     fontSize: 8,
-    borderBottom: '1pt solid #000',
-  },
-  nutrientRowThick: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 2,
-    paddingBottom: 2,
-    paddingLeft: 4,
-    paddingRight: 4,
-    fontSize: 8,
-    borderBottom: '5pt solid #000',
   },
   nutrientName: {
     fontWeight: 'bold',
@@ -171,7 +236,6 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     paddingLeft: 4,
     paddingRight: 4,
-    borderTop: '4pt solid #000',
   },
   micronutrientRow: {
     flexDirection: 'row',
@@ -181,6 +245,14 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
     paddingRight: 4,
     fontSize: 8,
+  },
+  notSignificant: {
+    fontSize: 7,
+    paddingTop: 4,
+    paddingBottom: 2,
+    paddingLeft: 4,
+    paddingRight: 4,
+    fontStyle: 'italic',
   },
   ingredientSection: {
     marginTop: 20,
@@ -214,6 +286,9 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
       {/* Header */}
       <Text style={styles.header}>Nutrition Facts</Text>
 
+      {/* Thick separator under header */}
+      <View style={styles.thickSeparator} />
+
       {/* Serving Info */}
       <View style={styles.servingInfo}>
         <Text style={styles.servingSizeBold}>
@@ -224,6 +299,9 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
         </Text>
       </View>
 
+      {/* Medium separator */}
+      <View style={styles.mediumSeparator} />
+
       {/* Calories */}
       <View style={styles.caloriesSection}>
         <Text style={styles.caloriesLabel}>Amount per serving</Text>
@@ -233,8 +311,14 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
         </View>
       </View>
 
+      {/* Thick separator under calories */}
+      <View style={styles.caloriesSeparator} />
+
       {/* % Daily Value Header */}
       <Text style={styles.dvHeader}>% Daily Value*</Text>
+
+      {/* Thin separator */}
+      <View style={styles.thinSeparator} />
 
       {/* Total Fat */}
       <View style={styles.nutrientRow}>
@@ -243,6 +327,7 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
         </Text>
         <Text style={styles.dvValue}>{calculateDV('totalFat', nutritionData.totalFat)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       {/* Saturated Fat */}
       <View style={styles.nutrientRow}>
@@ -251,6 +336,7 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
         </Text>
         <Text style={styles.dvValue}>{calculateDV('saturatedFat', nutritionData.saturatedFat)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       {/* Trans Fat */}
       <View style={styles.nutrientRow}>
@@ -259,6 +345,7 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
         </Text>
         <Text></Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       {/* Cholesterol */}
       <View style={styles.nutrientRow}>
@@ -267,6 +354,7 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
         </Text>
         <Text style={styles.dvValue}>{calculateDV('cholesterol', nutritionData.cholesterol)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       {/* Sodium */}
       <View style={styles.nutrientRow}>
@@ -275,6 +363,7 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
         </Text>
         <Text style={styles.dvValue}>{calculateDV('sodium', nutritionData.sodium)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       {/* Total Carbohydrates */}
       <View style={styles.nutrientRow}>
@@ -284,53 +373,334 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
         </Text>
         <Text style={styles.dvValue}>{calculateDV('totalCarbohydrates', nutritionData.totalCarbohydrates)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       {/* Dietary Fiber */}
       <View style={styles.nutrientRow}>
         <Text style={styles.nutrientIndent1}>Dietary Fiber {nutritionData.dietaryFiber}g</Text>
         <Text style={styles.dvValue}>{calculateDV('dietaryFiber', nutritionData.dietaryFiber)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       {/* Total Sugars */}
       <View style={styles.nutrientRow}>
         <Text style={styles.nutrientIndent1}>Total Sugars {nutritionData.totalSugars}g</Text>
         <Text></Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       {/* Added Sugars */}
-      <View style={styles.nutrientRowThick}>
+      <View style={styles.nutrientRow}>
         <Text style={styles.nutrientIndent2}>Includes {nutritionData.addedSugars}g Added Sugars</Text>
         <Text style={styles.dvValue}>{calculateDV('addedSugars', nutritionData.addedSugars)}%</Text>
       </View>
 
+      {/* Medium separator */}
+      <View style={styles.mediumSeparator} />
+
       {/* Protein */}
-      <View style={styles.nutrientRowThick}>
+      <View style={styles.nutrientRow}>
         <Text>
           <Text style={styles.nutrientName}>Protein</Text> {nutritionData.protein}g
         </Text>
         <Text></Text>
       </View>
 
+      {/* Medium separator before micronutrients */}
+      <View style={styles.mediumSeparator} />
+
       {/* Micronutrients */}
       <View style={styles.micronutrientRow}>
         <Text>Vitamin D {nutritionData.vitaminD}mcg</Text>
         <Text style={styles.dvValue}>{calculateDV('vitaminD', nutritionData.vitaminD)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       <View style={styles.micronutrientRow}>
         <Text>Calcium {nutritionData.calcium}mg</Text>
         <Text style={styles.dvValue}>{calculateDV('calcium', nutritionData.calcium)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       <View style={styles.micronutrientRow}>
         <Text>Iron {nutritionData.iron}mg</Text>
         <Text style={styles.dvValue}>{calculateDV('iron', nutritionData.iron)}%</Text>
       </View>
+      <View style={styles.hairlineSeparator} />
 
       <View style={styles.micronutrientRow}>
         <Text>Potassium {nutritionData.potassium}mg</Text>
         <Text style={styles.dvValue}>{calculateDV('potassium', nutritionData.potassium)}%</Text>
       </View>
+
+      {/* Thin separator */}
+      <View style={styles.thinSeparator} />
+
+      {/* Footnote */}
+      <View style={styles.footnote}>
+        <Text>
+          * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes
+          to a daily diet. 2,000 calories a day is used for general nutrition advice.
+        </Text>
+      </View>
+    </View>
+  )
+}
+
+// Simplified NFP Component - FDA 21 CFR 101.9
+// Omits nutrients that are below significance thresholds
+const SimplifiedNFP: React.FC<LabelPDFProps> = ({
+  servingSize,
+  servingsPerContainer,
+  nutritionData,
+}) => {
+  // Determine which nutrients to show
+  const showTotalFat = !isBelowThreshold('totalFat', nutritionData.totalFat)
+  const showSaturatedFat = !isBelowThreshold('saturatedFat', nutritionData.saturatedFat)
+  const showTransFat = !isBelowThreshold('transFat', nutritionData.transFat)
+  const showCholesterol = !isBelowThreshold('cholesterol', nutritionData.cholesterol)
+  const showSodium = !isBelowThreshold('sodium', nutritionData.sodium)
+  const showCarbs = !isBelowThreshold('totalCarbohydrates', nutritionData.totalCarbohydrates)
+  const showFiber = !isBelowThreshold('dietaryFiber', nutritionData.dietaryFiber)
+  const showSugars = !isBelowThreshold('totalSugars', nutritionData.totalSugars)
+  const showAddedSugars = !isBelowThreshold('addedSugars', nutritionData.addedSugars)
+  const showProtein = !isBelowThreshold('protein', nutritionData.protein)
+  const showVitaminD = parseValue(nutritionData.vitaminD) > 0
+  const showCalcium = parseValue(nutritionData.calcium) > 0
+  const showIron = parseValue(nutritionData.iron) > 0
+  const showPotassium = parseValue(nutritionData.potassium) > 0
+
+  // Collect omitted nutrients for "Not a significant source" statement
+  const omittedNutrients: string[] = []
+  if (!showTotalFat) omittedNutrients.push('total fat')
+  if (!showSaturatedFat) omittedNutrients.push('saturated fat')
+  if (!showTransFat) omittedNutrients.push('trans fat')
+  if (!showCholesterol) omittedNutrients.push('cholesterol')
+  if (!showFiber) omittedNutrients.push('dietary fiber')
+  if (!showVitaminD) omittedNutrients.push('vitamin D')
+  if (!showCalcium) omittedNutrients.push('calcium')
+  if (!showIron) omittedNutrients.push('iron')
+  if (!showPotassium) omittedNutrients.push('potassium')
+
+  return (
+    <View style={styles.nfpContainer}>
+      {/* Header */}
+      <Text style={styles.header}>Nutrition Facts</Text>
+
+      {/* Thick separator under header */}
+      <View style={styles.thickSeparator} />
+
+      {/* Serving Info */}
+      <View style={styles.servingInfo}>
+        <Text style={styles.servingSizeBold}>
+          Serving size <Text>{servingSize}</Text>
+        </Text>
+        <Text style={styles.servingsPerContainer}>
+          Servings per container {servingsPerContainer}
+        </Text>
+      </View>
+
+      {/* Medium separator */}
+      <View style={styles.mediumSeparator} />
+
+      {/* Calories */}
+      <View style={styles.caloriesSection}>
+        <Text style={styles.caloriesLabel}>Amount per serving</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Text style={styles.caloriesLabel}>Calories</Text>
+          <Text style={styles.caloriesValue}>{nutritionData.calories}</Text>
+        </View>
+      </View>
+
+      {/* Thick separator under calories */}
+      <View style={styles.caloriesSeparator} />
+
+      {/* % Daily Value Header */}
+      <Text style={styles.dvHeader}>% Daily Value*</Text>
+
+      {/* Thin separator */}
+      <View style={styles.thinSeparator} />
+
+      {/* Total Fat - only show if significant */}
+      {showTotalFat && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text>
+              <Text style={styles.nutrientName}>Total Fat</Text> {nutritionData.totalFat}g
+            </Text>
+            <Text style={styles.dvValue}>{calculateDV('totalFat', nutritionData.totalFat)}%</Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {/* Saturated Fat */}
+      {showSaturatedFat && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text style={showTotalFat ? styles.nutrientIndent1 : undefined}>
+              Saturated Fat {nutritionData.saturatedFat}g
+            </Text>
+            <Text style={styles.dvValue}>{calculateDV('saturatedFat', nutritionData.saturatedFat)}%</Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {/* Trans Fat */}
+      {showTransFat && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text style={showTotalFat ? styles.nutrientIndent1 : undefined}>
+              <Text style={{ fontStyle: 'italic' }}>Trans</Text> Fat {nutritionData.transFat}g
+            </Text>
+            <Text></Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {/* Cholesterol */}
+      {showCholesterol && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text>
+              <Text style={styles.nutrientName}>Cholesterol</Text> {nutritionData.cholesterol}mg
+            </Text>
+            <Text style={styles.dvValue}>{calculateDV('cholesterol', nutritionData.cholesterol)}%</Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {/* Sodium - always show even in simplified (FDA requirement) */}
+      <View style={styles.nutrientRow}>
+        <Text>
+          <Text style={styles.nutrientName}>Sodium</Text> {nutritionData.sodium}mg
+        </Text>
+        <Text style={styles.dvValue}>{calculateDV('sodium', nutritionData.sodium)}%</Text>
+      </View>
+      <View style={styles.hairlineSeparator} />
+
+      {/* Total Carbohydrates */}
+      {showCarbs && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text>
+              <Text style={styles.nutrientName}>Total Carbohydrate</Text>{' '}
+              {nutritionData.totalCarbohydrates}g
+            </Text>
+            <Text style={styles.dvValue}>{calculateDV('totalCarbohydrates', nutritionData.totalCarbohydrates)}%</Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {/* Dietary Fiber */}
+      {showFiber && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text style={showCarbs ? styles.nutrientIndent1 : undefined}>
+              Dietary Fiber {nutritionData.dietaryFiber}g
+            </Text>
+            <Text style={styles.dvValue}>{calculateDV('dietaryFiber', nutritionData.dietaryFiber)}%</Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {/* Total Sugars */}
+      {showSugars && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text style={showCarbs ? styles.nutrientIndent1 : undefined}>
+              Total Sugars {nutritionData.totalSugars}g
+            </Text>
+            <Text></Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {/* Added Sugars */}
+      {showAddedSugars && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text style={showCarbs ? styles.nutrientIndent2 : styles.nutrientIndent1}>
+              Includes {nutritionData.addedSugars}g Added Sugars
+            </Text>
+            <Text style={styles.dvValue}>{calculateDV('addedSugars', nutritionData.addedSugars)}%</Text>
+          </View>
+        </>
+      )}
+
+      {/* Medium separator */}
+      <View style={styles.mediumSeparator} />
+
+      {/* Protein */}
+      {showProtein && (
+        <>
+          <View style={styles.nutrientRow}>
+            <Text>
+              <Text style={styles.nutrientName}>Protein</Text> {nutritionData.protein}g
+            </Text>
+            <Text></Text>
+          </View>
+
+          {/* Medium separator before micronutrients */}
+          <View style={styles.mediumSeparator} />
+        </>
+      )}
+
+      {/* Micronutrients - only show if present */}
+      {showVitaminD && (
+        <>
+          <View style={styles.micronutrientRow}>
+            <Text>Vitamin D {nutritionData.vitaminD}mcg</Text>
+            <Text style={styles.dvValue}>{calculateDV('vitaminD', nutritionData.vitaminD)}%</Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {showCalcium && (
+        <>
+          <View style={styles.micronutrientRow}>
+            <Text>Calcium {nutritionData.calcium}mg</Text>
+            <Text style={styles.dvValue}>{calculateDV('calcium', nutritionData.calcium)}%</Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {showIron && (
+        <>
+          <View style={styles.micronutrientRow}>
+            <Text>Iron {nutritionData.iron}mg</Text>
+            <Text style={styles.dvValue}>{calculateDV('iron', nutritionData.iron)}%</Text>
+          </View>
+          <View style={styles.hairlineSeparator} />
+        </>
+      )}
+
+      {showPotassium && (
+        <>
+          <View style={styles.micronutrientRow}>
+            <Text>Potassium {nutritionData.potassium}mg</Text>
+            <Text style={styles.dvValue}>{calculateDV('potassium', nutritionData.potassium)}%</Text>
+          </View>
+        </>
+      )}
+
+      {/* Thin separator */}
+      <View style={styles.thinSeparator} />
+
+      {/* Not a significant source statement - FDA requirement */}
+      {omittedNutrients.length > 0 && (
+        <Text style={styles.notSignificant}>
+          Not a significant source of {omittedNutrients.join(', ')}.
+        </Text>
+      )}
 
       {/* Footnote */}
       <View style={styles.footnote}>
@@ -366,6 +736,10 @@ export const LabelPDFDocument: React.FC<LabelPDFProps> = (props) => {
 
         {/* Nutrition Facts Panel */}
         {format === 'standard_vertical' && <StandardVerticalNFP {...props} />}
+        {format === 'simplified' && <SimplifiedNFP {...props} />}
+
+        {/* Tabular and Linear formats - fallback to standard for now */}
+        {(format === 'tabular' || format === 'linear') && <StandardVerticalNFP {...props} />}
 
         {/* Ingredient Statement */}
         {ingredientStatement && (
