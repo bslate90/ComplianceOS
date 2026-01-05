@@ -220,6 +220,30 @@
   .mobile-hide {
     @apply hidden;
   }
+
+  /* Mobile dropdown fixes */
+  [data-slot="select-trigger"] {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  [data-slot="select-value"] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-slot="select-content"] {
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  [data-slot="select-item"] {
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.4;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
 }
 
 /* ========================================
