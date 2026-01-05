@@ -78,6 +78,14 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
     const [members, setMembers] = useState<MemberWithPermissions[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
     const [auditLoading, setAuditLoading] = useState(false);
+
+    // Invite member state
+    const [showInviteDialog, setShowInviteDialog] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteName, setInviteName] = useState('');
+    const [inviteRole, setInviteRole] = useState('member');
+    const [inviting, setInviting] = useState(false);
+
     const supabase = createClient();
 
     const fetchSettings = useCallback(async () => {
@@ -155,6 +163,63 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
             }
         } catch {
             toast.error('Failed to update role');
+        }
+    };
+
+    const handleInviteMember = async () => {
+        if (!inviteEmail) {
+            toast.error('Email is required');
+            return;
+        }
+
+        setInviting(true);
+        try {
+            const res = await fetch('/api/organization/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: inviteEmail,
+                    full_name: inviteName || undefined,
+                    role: inviteRole,
+                }),
+            });
+
+            if (res.ok) {
+                toast.success(`Successfully invited ${inviteEmail}`);
+                setShowInviteDialog(false);
+                setInviteEmail('');
+                setInviteName('');
+                setInviteRole('member');
+                fetchMembers();
+            } else {
+                const error = await res.json();
+                toast.error(error.error || 'Failed to invite member');
+            }
+        } catch {
+            toast.error('Failed to invite member');
+        }
+        setInviting(false);
+    };
+
+    const handleRemoveMember = async (memberId: string, memberName: string) => {
+        if (!confirm(`Are you sure you want to remove ${memberName} from the organization?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/organization/members?memberId=${memberId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                toast.success('Member removed successfully');
+                fetchMembers();
+            } else {
+                const error = await res.json();
+                toast.error(error.error || 'Failed to remove member');
+            }
+        } catch {
+            toast.error('Failed to remove member');
         }
     };
 
@@ -340,6 +405,67 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
 
             {/* Team & Permissions Tab */}
             <TabsContent value="team" className="space-y-4">
+                {/* Invite Member Dialog */}
+                {showInviteDialog && (
+                    <Card className="border-2 border-primary/50 shadow-lg">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                </svg>
+                                Invite New Team Member
+                            </CardTitle>
+                            <CardDescription>
+                                Send an invitation to add someone to your organization
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="invite_email">Email Address *</Label>
+                                    <Input
+                                        id="invite_email"
+                                        type="email"
+                                        placeholder="colleague@company.com"
+                                        value={inviteEmail}
+                                        onChange={(e) => setInviteEmail(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="invite_name">Full Name (optional)</Label>
+                                    <Input
+                                        id="invite_name"
+                                        placeholder="John Doe"
+                                        value={inviteName}
+                                        onChange={(e) => setInviteName(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Role</Label>
+                                <Select value={inviteRole} onValueChange={setInviteRole}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="admin">Admin - Full access</SelectItem>
+                                        <SelectItem value="member">Member - Create & edit</SelectItem>
+                                        <SelectItem value="viewer">Viewer - Read only</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex justify-end gap-3 pt-2">
+                                <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleInviteMember} disabled={inviting || !inviteEmail}>
+                                    {inviting ? 'Sending...' : 'Send Invitation'}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card className="border shadow-card">
                     <CardHeader className="pb-4">
                         <div className="flex items-center justify-between">
@@ -348,14 +474,14 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                                     <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    Team Members
+                                    Team Members ({members.length})
                                 </CardTitle>
                                 <CardDescription>
                                     Manage team roles and permissions
                                 </CardDescription>
                             </div>
-                            {isAdmin && (
-                                <Button size="sm" className="gap-1.5">
+                            {isAdmin && !showInviteDialog && (
+                                <Button size="sm" className="gap-1.5" onClick={() => setShowInviteDialog(true)}>
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                     </svg>
@@ -366,49 +492,68 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
-                            {members.map((member) => (
-                                <div key={member.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center">
-                                            <span className="text-sm font-medium text-white">
-                                                {member.full_name?.charAt(0)?.toUpperCase() || '?'}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-medium text-foreground">
-                                                {member.full_name || 'Unnamed User'}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                Joined {new Date(member.created_at).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        {isAdmin ? (
-                                            <Select
-                                                value={member.role}
-                                                onValueChange={(value) => handleUpdateMemberRole(member.id, value)}
-                                            >
-                                                <SelectTrigger className="w-32">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="admin">Admin</SelectItem>
-                                                    <SelectItem value="member">Member</SelectItem>
-                                                    <SelectItem value="viewer">Viewer</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        ) : (
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${member.role === 'admin'
-                                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                                                : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                                                }`}>
-                                                {member.role}
-                                            </span>
-                                        )}
-                                    </div>
+                            {members.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <p>No team members found.</p>
+                                    <p className="text-sm mt-1">Click &quot;Invite Member&quot; to add someone to your team.</p>
                                 </div>
-                            ))}
+                            ) : (
+                                members.map((member) => (
+                                    <div key={member.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center">
+                                                <span className="text-sm font-medium text-white">
+                                                    {member.full_name?.charAt(0)?.toUpperCase() || '?'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-foreground">
+                                                    {member.full_name || 'Unnamed User'}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {(member as MemberWithPermissions & { email?: string }).email || `Joined ${new Date(member.created_at).toLocaleDateString()}`}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {isAdmin ? (
+                                                <>
+                                                    <Select
+                                                        value={member.role}
+                                                        onValueChange={(value) => handleUpdateMemberRole(member.id, value)}
+                                                    >
+                                                        <SelectTrigger className="w-28">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="admin">Admin</SelectItem>
+                                                            <SelectItem value="member">Member</SelectItem>
+                                                            <SelectItem value="viewer">Viewer</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                                        onClick={() => handleRemoveMember(member.id, member.full_name || 'this user')}
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${member.role === 'admin'
+                                                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                                                    : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                                                    }`}>
+                                                    {member.role}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </CardContent>
                 </Card>
