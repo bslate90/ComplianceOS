@@ -869,6 +869,301 @@ export interface Database {
                     }
                 ]
             }
+            webhook_configurations: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    name: string
+                    provider: string
+                    webhook_url: string | null
+                    api_key: string | null
+                    api_secret: string | null
+                    plex_company_code: string | null
+                    plex_data_source_key: string | null
+                    plex_environment: string
+                    sync_ingredients: boolean
+                    sync_recipes: boolean
+                    sync_nutrition: boolean
+                    sync_compliance: boolean
+                    auto_generate_reports: boolean
+                    is_active: boolean
+                    last_sync_at: string | null
+                    last_error: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id: string
+                    name: string
+                    provider?: string
+                    webhook_url?: string | null
+                    api_key?: string | null
+                    api_secret?: string | null
+                    plex_company_code?: string | null
+                    plex_data_source_key?: string | null
+                    plex_environment?: string
+                    sync_ingredients?: boolean
+                    sync_recipes?: boolean
+                    sync_nutrition?: boolean
+                    sync_compliance?: boolean
+                    auto_generate_reports?: boolean
+                    is_active?: boolean
+                    last_sync_at?: string | null
+                    last_error?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    name?: string
+                    provider?: string
+                    webhook_url?: string | null
+                    api_key?: string | null
+                    api_secret?: string | null
+                    plex_company_code?: string | null
+                    plex_data_source_key?: string | null
+                    plex_environment?: string
+                    sync_ingredients?: boolean
+                    sync_recipes?: boolean
+                    sync_nutrition?: boolean
+                    sync_compliance?: boolean
+                    auto_generate_reports?: boolean
+                    is_active?: boolean
+                    last_sync_at?: string | null
+                    last_error?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "webhook_configurations_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            webhook_events: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    webhook_config_id: string | null
+                    event_type: string
+                    source: string
+                    external_id: string | null
+                    payload: Json
+                    headers: Json | null
+                    status: string
+                    processed_at: string | null
+                    error_message: string | null
+                    retry_count: number
+                    recipe_id: string | null
+                    compliance_report_id: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id: string
+                    webhook_config_id?: string | null
+                    event_type: string
+                    source?: string
+                    external_id?: string | null
+                    payload: Json
+                    headers?: Json | null
+                    status?: string
+                    processed_at?: string | null
+                    error_message?: string | null
+                    retry_count?: number
+                    recipe_id?: string | null
+                    compliance_report_id?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    webhook_config_id?: string | null
+                    event_type?: string
+                    source?: string
+                    external_id?: string | null
+                    payload?: Json
+                    headers?: Json | null
+                    status?: string
+                    processed_at?: string | null
+                    error_message?: string | null
+                    retry_count?: number
+                    recipe_id?: string | null
+                    compliance_report_id?: string | null
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "webhook_events_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "webhook_events_webhook_config_id_fkey"
+                        columns: ["webhook_config_id"]
+                        referencedRelation: "webhook_configurations"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            compliance_reports: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    recipe_id: string | null
+                    label_id: string | null
+                    trigger_source: string
+                    webhook_event_id: string | null
+                    report_type: string
+                    status: string
+                    overall_status: string | null
+                    total_checks: number
+                    passed_checks: number
+                    warning_checks: number
+                    failed_checks: number
+                    results: Json | null
+                    summary: string | null
+                    recommendations: Json | null
+                    generated_by: string | null
+                    generated_at: string | null
+                    expires_at: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id: string
+                    recipe_id?: string | null
+                    label_id?: string | null
+                    trigger_source?: string
+                    webhook_event_id?: string | null
+                    report_type?: string
+                    status?: string
+                    overall_status?: string | null
+                    total_checks?: number
+                    passed_checks?: number
+                    warning_checks?: number
+                    failed_checks?: number
+                    results?: Json | null
+                    summary?: string | null
+                    recommendations?: Json | null
+                    generated_by?: string | null
+                    generated_at?: string | null
+                    expires_at?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    recipe_id?: string | null
+                    label_id?: string | null
+                    trigger_source?: string
+                    webhook_event_id?: string | null
+                    report_type?: string
+                    status?: string
+                    overall_status?: string | null
+                    total_checks?: number
+                    passed_checks?: number
+                    warning_checks?: number
+                    failed_checks?: number
+                    results?: Json | null
+                    summary?: string | null
+                    recommendations?: Json | null
+                    generated_by?: string | null
+                    generated_at?: string | null
+                    expires_at?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "compliance_reports_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "compliance_reports_recipe_id_fkey"
+                        columns: ["recipe_id"]
+                        referencedRelation: "recipes"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            plex_sync_queue: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    webhook_config_id: string | null
+                    entity_type: string
+                    entity_id: string
+                    action: string
+                    payload: Json
+                    status: string
+                    attempts: number
+                    max_attempts: number
+                    last_attempt_at: string | null
+                    next_attempt_at: string | null
+                    error_message: string | null
+                    response_data: Json | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id: string
+                    webhook_config_id?: string | null
+                    entity_type: string
+                    entity_id: string
+                    action: string
+                    payload: Json
+                    status?: string
+                    attempts?: number
+                    max_attempts?: number
+                    last_attempt_at?: string | null
+                    next_attempt_at?: string | null
+                    error_message?: string | null
+                    response_data?: Json | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    webhook_config_id?: string | null
+                    entity_type?: string
+                    entity_id?: string
+                    action?: string
+                    payload?: Json
+                    status?: string
+                    attempts?: number
+                    max_attempts?: number
+                    last_attempt_at?: string | null
+                    next_attempt_at?: string | null
+                    error_message?: string | null
+                    response_data?: Json | null
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "plex_sync_queue_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "plex_sync_queue_webhook_config_id_fkey"
+                        columns: ["webhook_config_id"]
+                        referencedRelation: "webhook_configurations"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
         }
         Views: {
             [_ in never]: never
