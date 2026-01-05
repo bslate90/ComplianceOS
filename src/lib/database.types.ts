@@ -653,6 +653,222 @@ export interface Database {
                     }
                 ]
             }
+            organization_settings: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    default_label_format: string
+                    default_serving_size_g: number
+                    default_servings_per_container: number
+                    default_household_measure: string | null
+                    show_dual_column: boolean
+                    logo_url: string | null
+                    primary_color: string
+                    secondary_color: string
+                    company_address: string | null
+                    company_phone: string | null
+                    company_website: string | null
+                    general_disclaimer: string | null
+                    footer_text: string | null
+                    email_compliance_alerts: boolean
+                    email_expiration_reminders: boolean
+                    email_weekly_digest: boolean
+                    email_team_activity: boolean
+                    expiration_reminder_days: number
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id: string
+                    default_label_format?: string
+                    default_serving_size_g?: number
+                    default_servings_per_container?: number
+                    default_household_measure?: string | null
+                    show_dual_column?: boolean
+                    logo_url?: string | null
+                    primary_color?: string
+                    secondary_color?: string
+                    company_address?: string | null
+                    company_phone?: string | null
+                    company_website?: string | null
+                    general_disclaimer?: string | null
+                    footer_text?: string | null
+                    email_compliance_alerts?: boolean
+                    email_expiration_reminders?: boolean
+                    email_weekly_digest?: boolean
+                    email_team_activity?: boolean
+                    expiration_reminder_days?: number
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    default_label_format?: string
+                    default_serving_size_g?: number
+                    default_servings_per_container?: number
+                    default_household_measure?: string | null
+                    show_dual_column?: boolean
+                    logo_url?: string | null
+                    primary_color?: string
+                    secondary_color?: string
+                    company_address?: string | null
+                    company_phone?: string | null
+                    company_website?: string | null
+                    general_disclaimer?: string | null
+                    footer_text?: string | null
+                    email_compliance_alerts?: boolean
+                    email_expiration_reminders?: boolean
+                    email_weekly_digest?: boolean
+                    email_team_activity?: boolean
+                    expiration_reminder_days?: number
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "organization_settings_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            user_permissions: {
+                Row: {
+                    id: string
+                    profile_id: string
+                    organization_id: string
+                    can_manage_ingredients: boolean
+                    can_manage_recipes: boolean
+                    can_manage_labels: boolean
+                    can_manage_suppliers: boolean
+                    can_export_data: boolean
+                    can_import_data: boolean
+                    can_manage_team: boolean
+                    can_manage_settings: boolean
+                    can_view_audit_log: boolean
+                    can_delete_data: boolean
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    profile_id: string
+                    organization_id: string
+                    can_manage_ingredients?: boolean
+                    can_manage_recipes?: boolean
+                    can_manage_labels?: boolean
+                    can_manage_suppliers?: boolean
+                    can_export_data?: boolean
+                    can_import_data?: boolean
+                    can_manage_team?: boolean
+                    can_manage_settings?: boolean
+                    can_view_audit_log?: boolean
+                    can_delete_data?: boolean
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    profile_id?: string
+                    organization_id?: string
+                    can_manage_ingredients?: boolean
+                    can_manage_recipes?: boolean
+                    can_manage_labels?: boolean
+                    can_manage_suppliers?: boolean
+                    can_export_data?: boolean
+                    can_import_data?: boolean
+                    can_manage_team?: boolean
+                    can_manage_settings?: boolean
+                    can_view_audit_log?: boolean
+                    can_delete_data?: boolean
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "user_permissions_profile_id_fkey"
+                        columns: ["profile_id"]
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "user_permissions_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            organization_audit_log: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    user_id: string | null
+                    user_name: string | null
+                    user_email: string | null
+                    action: string
+                    entity_type: string
+                    entity_id: string | null
+                    entity_name: string | null
+                    old_values: Json | null
+                    new_values: Json | null
+                    change_summary: string | null
+                    ip_address: string | null
+                    user_agent: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id: string
+                    user_id?: string | null
+                    user_name?: string | null
+                    user_email?: string | null
+                    action: string
+                    entity_type: string
+                    entity_id?: string | null
+                    entity_name?: string | null
+                    old_values?: Json | null
+                    new_values?: Json | null
+                    change_summary?: string | null
+                    ip_address?: string | null
+                    user_agent?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    user_id?: string | null
+                    user_name?: string | null
+                    user_email?: string | null
+                    action?: string
+                    entity_type?: string
+                    entity_id?: string | null
+                    entity_name?: string | null
+                    old_values?: Json | null
+                    new_values?: Json | null
+                    change_summary?: string | null
+                    ip_address?: string | null
+                    user_agent?: string | null
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "organization_audit_log_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "organization_audit_log_user_id_fkey"
+                        columns: ["user_id"]
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
         }
         Views: {
             [_ in never]: never
