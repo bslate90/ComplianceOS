@@ -3,10 +3,13 @@
  * Generates FDA-compliant Nutrition Facts Panel PDFs
  * 
  * Supports formats:
- * - Standard Vertical: Full NFP with all nutrients
- * - Simplified: Omits nutrients that are below significance thresholds per FDA 21 CFR 101.9
- * - Tabular: Side-by-side format (future)
- * - Linear: Inline format for small packages (future)
+ * - Standard Vertical: Full height vertical NFP
+ * - Tabular: Side-by-side format for wide packages
+ * - Linear: Inline format for small packages
+ * 
+ * Supports modifiers:
+ * - Simplified: Omits nutrients below significance thresholds per FDA 21 CFR 101.9
+ *   Can be applied to ANY format to accommodate package sizing
  */
 
 import React from 'react'
@@ -51,7 +54,8 @@ interface LabelPDFProps {
   servingSize: string
   servingsPerContainer: string | number
   nutritionData: NutritionData
-  format?: 'standard_vertical' | 'simplified' | 'tabular' | 'linear'
+  format?: 'standard_vertical' | 'tabular' | 'linear'
+  simplified?: boolean // Modifier: omit insignificant nutrients
   ingredientStatement?: string
   allergenStatement?: string
   companyName?: string
@@ -74,13 +78,13 @@ const DAILY_VALUES = {
 }
 
 // FDA Simplified Format Thresholds (21 CFR 101.9)
-// Nutrients can be omitted if below these amounts per serving AND labeled as "Not a significant source"
+// Nutrients can be omitted if below these amounts per serving
 const SIMPLIFIED_THRESHOLDS = {
   totalFat: 0.5,        // g - can omit if <0.5g
   saturatedFat: 0.5,    // g
   transFat: 0.5,        // g
   cholesterol: 2,       // mg - can omit if <2mg
-  sodium: 5,            // mg - can omit if <5mg
+  sodium: 5,            // mg - can omit if <5mg (but usually shown)
   totalCarbohydrates: 1, // g - can omit if <1g
   dietaryFiber: 1,      // g
   totalSugars: 1,       // g
@@ -112,7 +116,95 @@ function parseValue(amount: number | string): number {
   return isNaN(value) ? 0 : value
 }
 
-// PDF Styles - Updated with inset separator bars
+// Determine which nutrients to show based on simplified mode
+interface NutrientVisibility {
+  showTotalFat: boolean
+  showSaturatedFat: boolean
+  showTransFat: boolean
+  showCholesterol: boolean
+  showSodium: boolean
+  showCarbs: boolean
+  showFiber: boolean
+  showSugars: boolean
+  showAddedSugars: boolean
+  showProtein: boolean
+  showVitaminD: boolean
+  showCalcium: boolean
+  showIron: boolean
+  showPotassium: boolean
+  omittedNutrients: string[]
+}
+
+function getNutrientVisibility(nutritionData: NutritionData, simplified: boolean): NutrientVisibility {
+  if (!simplified) {
+    // Show all nutrients in standard mode
+    return {
+      showTotalFat: true,
+      showSaturatedFat: true,
+      showTransFat: true,
+      showCholesterol: true,
+      showSodium: true,
+      showCarbs: true,
+      showFiber: true,
+      showSugars: true,
+      showAddedSugars: true,
+      showProtein: true,
+      showVitaminD: true,
+      showCalcium: true,
+      showIron: true,
+      showPotassium: true,
+      omittedNutrients: [],
+    }
+  }
+
+  // Simplified mode - check thresholds
+  const showTotalFat = !isBelowThreshold('totalFat', nutritionData.totalFat)
+  const showSaturatedFat = !isBelowThreshold('saturatedFat', nutritionData.saturatedFat)
+  const showTransFat = !isBelowThreshold('transFat', nutritionData.transFat)
+  const showCholesterol = !isBelowThreshold('cholesterol', nutritionData.cholesterol)
+  const showSodium = true // Always show sodium per FDA
+  const showCarbs = !isBelowThreshold('totalCarbohydrates', nutritionData.totalCarbohydrates)
+  const showFiber = !isBelowThreshold('dietaryFiber', nutritionData.dietaryFiber)
+  const showSugars = !isBelowThreshold('totalSugars', nutritionData.totalSugars)
+  const showAddedSugars = !isBelowThreshold('addedSugars', nutritionData.addedSugars)
+  const showProtein = !isBelowThreshold('protein', nutritionData.protein)
+  const showVitaminD = parseValue(nutritionData.vitaminD) > 0
+  const showCalcium = parseValue(nutritionData.calcium) > 0
+  const showIron = parseValue(nutritionData.iron) > 0
+  const showPotassium = parseValue(nutritionData.potassium) > 0
+
+  // Collect omitted nutrients for "Not a significant source" statement
+  const omittedNutrients: string[] = []
+  if (!showTotalFat) omittedNutrients.push('total fat')
+  if (!showSaturatedFat) omittedNutrients.push('saturated fat')
+  if (!showTransFat) omittedNutrients.push('trans fat')
+  if (!showCholesterol) omittedNutrients.push('cholesterol')
+  if (!showFiber) omittedNutrients.push('dietary fiber')
+  if (!showVitaminD) omittedNutrients.push('vitamin D')
+  if (!showCalcium) omittedNutrients.push('calcium')
+  if (!showIron) omittedNutrients.push('iron')
+  if (!showPotassium) omittedNutrients.push('potassium')
+
+  return {
+    showTotalFat,
+    showSaturatedFat,
+    showTransFat,
+    showCholesterol,
+    showSodium,
+    showCarbs,
+    showFiber,
+    showSugars,
+    showAddedSugars,
+    showProtein,
+    showVitaminD,
+    showCalcium,
+    showIron,
+    showPotassium,
+    omittedNutrients,
+  }
+}
+
+// PDF Styles - with inset separator bars
 const styles = StyleSheet.create({
   page: {
     padding: 20,
@@ -275,12 +367,20 @@ const styles = StyleSheet.create({
   },
 })
 
-// Standard Vertical NFP Component
-const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
+// Standard Vertical NFP Component (with optional simplified modifier)
+const StandardVerticalNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibility }> = ({
   servingSize,
   servingsPerContainer,
   nutritionData,
+  visibility,
 }) => {
+  const {
+    showTotalFat, showSaturatedFat, showTransFat, showCholesterol,
+    showCarbs, showFiber, showSugars, showAddedSugars, showProtein,
+    showVitaminD, showCalcium, showIron, showPotassium,
+    omittedNutrients,
+  } = visibility
+
   return (
     <View style={styles.nfpContainer}>
       {/* Header */}
@@ -321,207 +421,6 @@ const StandardVerticalNFP: React.FC<LabelPDFProps> = ({
       <View style={styles.thinSeparator} />
 
       {/* Total Fat */}
-      <View style={styles.nutrientRow}>
-        <Text>
-          <Text style={styles.nutrientName}>Total Fat</Text> {nutritionData.totalFat}g
-        </Text>
-        <Text style={styles.dvValue}>{calculateDV('totalFat', nutritionData.totalFat)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      {/* Saturated Fat */}
-      <View style={styles.nutrientRow}>
-        <Text style={styles.nutrientIndent1}>
-          Saturated Fat {nutritionData.saturatedFat}g
-        </Text>
-        <Text style={styles.dvValue}>{calculateDV('saturatedFat', nutritionData.saturatedFat)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      {/* Trans Fat */}
-      <View style={styles.nutrientRow}>
-        <Text style={styles.nutrientIndent1}>
-          <Text style={{ fontStyle: 'italic' }}>Trans</Text> Fat {nutritionData.transFat}g
-        </Text>
-        <Text></Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      {/* Cholesterol */}
-      <View style={styles.nutrientRow}>
-        <Text>
-          <Text style={styles.nutrientName}>Cholesterol</Text> {nutritionData.cholesterol}mg
-        </Text>
-        <Text style={styles.dvValue}>{calculateDV('cholesterol', nutritionData.cholesterol)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      {/* Sodium */}
-      <View style={styles.nutrientRow}>
-        <Text>
-          <Text style={styles.nutrientName}>Sodium</Text> {nutritionData.sodium}mg
-        </Text>
-        <Text style={styles.dvValue}>{calculateDV('sodium', nutritionData.sodium)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      {/* Total Carbohydrates */}
-      <View style={styles.nutrientRow}>
-        <Text>
-          <Text style={styles.nutrientName}>Total Carbohydrate</Text>{' '}
-          {nutritionData.totalCarbohydrates}g
-        </Text>
-        <Text style={styles.dvValue}>{calculateDV('totalCarbohydrates', nutritionData.totalCarbohydrates)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      {/* Dietary Fiber */}
-      <View style={styles.nutrientRow}>
-        <Text style={styles.nutrientIndent1}>Dietary Fiber {nutritionData.dietaryFiber}g</Text>
-        <Text style={styles.dvValue}>{calculateDV('dietaryFiber', nutritionData.dietaryFiber)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      {/* Total Sugars */}
-      <View style={styles.nutrientRow}>
-        <Text style={styles.nutrientIndent1}>Total Sugars {nutritionData.totalSugars}g</Text>
-        <Text></Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      {/* Added Sugars */}
-      <View style={styles.nutrientRow}>
-        <Text style={styles.nutrientIndent2}>Includes {nutritionData.addedSugars}g Added Sugars</Text>
-        <Text style={styles.dvValue}>{calculateDV('addedSugars', nutritionData.addedSugars)}%</Text>
-      </View>
-
-      {/* Medium separator */}
-      <View style={styles.mediumSeparator} />
-
-      {/* Protein */}
-      <View style={styles.nutrientRow}>
-        <Text>
-          <Text style={styles.nutrientName}>Protein</Text> {nutritionData.protein}g
-        </Text>
-        <Text></Text>
-      </View>
-
-      {/* Medium separator before micronutrients */}
-      <View style={styles.mediumSeparator} />
-
-      {/* Micronutrients */}
-      <View style={styles.micronutrientRow}>
-        <Text>Vitamin D {nutritionData.vitaminD}mcg</Text>
-        <Text style={styles.dvValue}>{calculateDV('vitaminD', nutritionData.vitaminD)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      <View style={styles.micronutrientRow}>
-        <Text>Calcium {nutritionData.calcium}mg</Text>
-        <Text style={styles.dvValue}>{calculateDV('calcium', nutritionData.calcium)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      <View style={styles.micronutrientRow}>
-        <Text>Iron {nutritionData.iron}mg</Text>
-        <Text style={styles.dvValue}>{calculateDV('iron', nutritionData.iron)}%</Text>
-      </View>
-      <View style={styles.hairlineSeparator} />
-
-      <View style={styles.micronutrientRow}>
-        <Text>Potassium {nutritionData.potassium}mg</Text>
-        <Text style={styles.dvValue}>{calculateDV('potassium', nutritionData.potassium)}%</Text>
-      </View>
-
-      {/* Thin separator */}
-      <View style={styles.thinSeparator} />
-
-      {/* Footnote */}
-      <View style={styles.footnote}>
-        <Text>
-          * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes
-          to a daily diet. 2,000 calories a day is used for general nutrition advice.
-        </Text>
-      </View>
-    </View>
-  )
-}
-
-// Simplified NFP Component - FDA 21 CFR 101.9
-// Omits nutrients that are below significance thresholds
-const SimplifiedNFP: React.FC<LabelPDFProps> = ({
-  servingSize,
-  servingsPerContainer,
-  nutritionData,
-}) => {
-  // Determine which nutrients to show
-  const showTotalFat = !isBelowThreshold('totalFat', nutritionData.totalFat)
-  const showSaturatedFat = !isBelowThreshold('saturatedFat', nutritionData.saturatedFat)
-  const showTransFat = !isBelowThreshold('transFat', nutritionData.transFat)
-  const showCholesterol = !isBelowThreshold('cholesterol', nutritionData.cholesterol)
-  const showSodium = !isBelowThreshold('sodium', nutritionData.sodium)
-  const showCarbs = !isBelowThreshold('totalCarbohydrates', nutritionData.totalCarbohydrates)
-  const showFiber = !isBelowThreshold('dietaryFiber', nutritionData.dietaryFiber)
-  const showSugars = !isBelowThreshold('totalSugars', nutritionData.totalSugars)
-  const showAddedSugars = !isBelowThreshold('addedSugars', nutritionData.addedSugars)
-  const showProtein = !isBelowThreshold('protein', nutritionData.protein)
-  const showVitaminD = parseValue(nutritionData.vitaminD) > 0
-  const showCalcium = parseValue(nutritionData.calcium) > 0
-  const showIron = parseValue(nutritionData.iron) > 0
-  const showPotassium = parseValue(nutritionData.potassium) > 0
-
-  // Collect omitted nutrients for "Not a significant source" statement
-  const omittedNutrients: string[] = []
-  if (!showTotalFat) omittedNutrients.push('total fat')
-  if (!showSaturatedFat) omittedNutrients.push('saturated fat')
-  if (!showTransFat) omittedNutrients.push('trans fat')
-  if (!showCholesterol) omittedNutrients.push('cholesterol')
-  if (!showFiber) omittedNutrients.push('dietary fiber')
-  if (!showVitaminD) omittedNutrients.push('vitamin D')
-  if (!showCalcium) omittedNutrients.push('calcium')
-  if (!showIron) omittedNutrients.push('iron')
-  if (!showPotassium) omittedNutrients.push('potassium')
-
-  return (
-    <View style={styles.nfpContainer}>
-      {/* Header */}
-      <Text style={styles.header}>Nutrition Facts</Text>
-
-      {/* Thick separator under header */}
-      <View style={styles.thickSeparator} />
-
-      {/* Serving Info */}
-      <View style={styles.servingInfo}>
-        <Text style={styles.servingSizeBold}>
-          Serving size <Text>{servingSize}</Text>
-        </Text>
-        <Text style={styles.servingsPerContainer}>
-          Servings per container {servingsPerContainer}
-        </Text>
-      </View>
-
-      {/* Medium separator */}
-      <View style={styles.mediumSeparator} />
-
-      {/* Calories */}
-      <View style={styles.caloriesSection}>
-        <Text style={styles.caloriesLabel}>Amount per serving</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={styles.caloriesLabel}>Calories</Text>
-          <Text style={styles.caloriesValue}>{nutritionData.calories}</Text>
-        </View>
-      </View>
-
-      {/* Thick separator under calories */}
-      <View style={styles.caloriesSeparator} />
-
-      {/* % Daily Value Header */}
-      <Text style={styles.dvHeader}>% Daily Value*</Text>
-
-      {/* Thin separator */}
-      <View style={styles.thinSeparator} />
-
-      {/* Total Fat - only show if significant */}
       {showTotalFat && (
         <>
           <View style={styles.nutrientRow}>
@@ -573,7 +472,7 @@ const SimplifiedNFP: React.FC<LabelPDFProps> = ({
         </>
       )}
 
-      {/* Sodium - always show even in simplified (FDA requirement) */}
+      {/* Sodium - always shown */}
       <View style={styles.nutrientRow}>
         <Text>
           <Text style={styles.nutrientName}>Sodium</Text> {nutritionData.sodium}mg
@@ -652,7 +551,7 @@ const SimplifiedNFP: React.FC<LabelPDFProps> = ({
         </>
       )}
 
-      {/* Micronutrients - only show if present */}
+      {/* Micronutrients */}
       {showVitaminD && (
         <>
           <View style={styles.micronutrientRow}>
@@ -695,7 +594,7 @@ const SimplifiedNFP: React.FC<LabelPDFProps> = ({
       {/* Thin separator */}
       <View style={styles.thinSeparator} />
 
-      {/* Not a significant source statement - FDA requirement */}
+      {/* Not a significant source statement - only in simplified mode */}
       {omittedNutrients.length > 0 && (
         <Text style={styles.notSignificant}>
           Not a significant source of {omittedNutrients.join(', ')}.
@@ -713,6 +612,20 @@ const SimplifiedNFP: React.FC<LabelPDFProps> = ({
   )
 }
 
+// TODO: Tabular NFP Component (side-by-side format)
+const TabularNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibility }> = (props) => {
+  // For now, fallback to vertical format
+  // Tabular format would arrange nutrients in columns
+  return <StandardVerticalNFP {...props} />
+}
+
+// TODO: Linear NFP Component (inline format for small packages)
+const LinearNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibility }> = (props) => {
+  // For now, fallback to vertical format
+  // Linear format would be a single line or minimal rows
+  return <StandardVerticalNFP {...props} />
+}
+
 // Main Label PDF Document
 export const LabelPDFDocument: React.FC<LabelPDFProps> = (props) => {
   const {
@@ -722,7 +635,25 @@ export const LabelPDFDocument: React.FC<LabelPDFProps> = (props) => {
     companyName,
     companyAddress,
     format = 'standard_vertical',
+    simplified = false,
+    nutritionData,
   } = props
+
+  // Calculate nutrient visibility based on simplified modifier
+  const visibility = getNutrientVisibility(nutritionData, simplified)
+
+  // Select the appropriate format component
+  const renderNFP = () => {
+    switch (format) {
+      case 'tabular':
+        return <TabularNFP {...props} visibility={visibility} />
+      case 'linear':
+        return <LinearNFP {...props} visibility={visibility} />
+      case 'standard_vertical':
+      default:
+        return <StandardVerticalNFP {...props} visibility={visibility} />
+    }
+  }
 
   return (
     <Document>
@@ -734,12 +665,8 @@ export const LabelPDFDocument: React.FC<LabelPDFProps> = (props) => {
           </Text>
         )}
 
-        {/* Nutrition Facts Panel */}
-        {format === 'standard_vertical' && <StandardVerticalNFP {...props} />}
-        {format === 'simplified' && <SimplifiedNFP {...props} />}
-
-        {/* Tabular and Linear formats - fallback to standard for now */}
-        {(format === 'tabular' || format === 'linear') && <StandardVerticalNFP {...props} />}
+        {/* Nutrition Facts Panel - format with optional simplified modifier */}
+        {renderNFP()}
 
         {/* Ingredient Statement */}
         {ingredientStatement && (
