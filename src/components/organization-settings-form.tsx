@@ -137,6 +137,8 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
             });
             if (res.ok) {
                 toast.success('Settings saved successfully');
+                // Dispatch event to trigger branding refresh across the app
+                window.dispatchEvent(new CustomEvent('branding-updated'));
             } else {
                 const error = await res.json();
                 toast.error(error.error || 'Failed to save settings');
@@ -699,10 +701,10 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                             <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                             </svg>
-                            Branding & Appearance
+                            Branding &amp; Appearance
                         </CardTitle>
                         <CardDescription>
-                            Customize your organization&apos;s branding for exports
+                            Customize your organization&apos;s branding for the entire site. These colors and logo will be shown across all pages.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -716,6 +718,9 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                                     onChange={(e) => updateSetting('logo_url', e.target.value)}
                                     disabled={!isAdmin}
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Enter a URL to your logo image (PNG, JPG, or SVG recommended)
+                                </p>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="footer_text">Footer Text</Label>
@@ -747,6 +752,9 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                                         className="flex-1"
                                     />
                                 </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Used for navigation highlights, buttons, and accents
+                                </p>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="secondary_color">Secondary Color</Label>
@@ -766,6 +774,9 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                                         className="flex-1"
                                     />
                                 </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Used for gradients and secondary accents
+                                </p>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -790,6 +801,131 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                                 </Button>
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+
+                {/* Live Preview Card */}
+                <Card className="border shadow-card">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            Live Preview
+                        </CardTitle>
+                        <CardDescription>
+                            See how your branding will appear across the site
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Sidebar Preview */}
+                            <div className="space-y-3">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sidebar Header</p>
+                                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                                    <div className="flex items-center gap-2.5">
+                                        {settings?.logo_url ? (
+                                            <div className="w-7 h-7 rounded-md overflow-hidden relative shadow-soft border border-border/50">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={settings.logo_url}
+                                                    alt="Logo preview"
+                                                    className="w-full h-full object-contain"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).style.display = 'none';
+                                                    }}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className="w-7 h-7 rounded-md flex items-center justify-center shadow-soft"
+                                                style={{
+                                                    background: `linear-gradient(135deg, ${settings?.primary_color || '#10b981'}, ${settings?.secondary_color || '#0d9488'})`
+                                                }}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <span className="text-sm font-semibold text-foreground">{organizationName}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Color Swatches */}
+                            <div className="space-y-3">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Color Palette</p>
+                                <div className="flex gap-3">
+                                    <div className="flex-1 space-y-1.5">
+                                        <div
+                                            className="h-12 rounded-lg shadow-soft border border-border/50"
+                                            style={{ backgroundColor: settings?.primary_color || '#10b981' }}
+                                        />
+                                        <p className="text-xs text-center text-muted-foreground">Primary</p>
+                                    </div>
+                                    <div className="flex-1 space-y-1.5">
+                                        <div
+                                            className="h-12 rounded-lg shadow-soft border border-border/50"
+                                            style={{ backgroundColor: settings?.secondary_color || '#0d9488' }}
+                                        />
+                                        <p className="text-xs text-center text-muted-foreground">Secondary</p>
+                                    </div>
+                                    <div className="flex-1 space-y-1.5">
+                                        <div
+                                            className="h-12 rounded-lg shadow-soft border border-border/50"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${settings?.primary_color || '#10b981'}, ${settings?.secondary_color || '#0d9488'})`
+                                            }}
+                                        />
+                                        <p className="text-xs text-center text-muted-foreground">Gradient</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Sample UI Elements */}
+                            <div className="space-y-3 md:col-span-2">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sample UI Elements</p>
+                                <div className="flex flex-wrap gap-3 items-center">
+                                    <button
+                                        className="px-4 py-2 rounded-md text-white text-sm font-medium shadow-soft transition-colors"
+                                        style={{ backgroundColor: settings?.primary_color || '#10b981' }}
+                                    >
+                                        Primary Button
+                                    </button>
+                                    <button
+                                        className="px-4 py-2 rounded-md text-sm font-medium border transition-colors"
+                                        style={{
+                                            borderColor: settings?.primary_color || '#10b981',
+                                            color: settings?.primary_color || '#10b981'
+                                        }}
+                                    >
+                                        Outline Button
+                                    </button>
+                                    <span
+                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+                                        style={{
+                                            backgroundColor: `${settings?.primary_color || '#10b981'}20`,
+                                            color: settings?.primary_color || '#10b981'
+                                        }}
+                                    >
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Active Badge
+                                    </span>
+                                    <div
+                                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${settings?.primary_color || '#10b981'}, ${settings?.secondary_color || '#0d9488'})`
+                                        }}
+                                    >
+                                        AB
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>

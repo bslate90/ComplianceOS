@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useBranding } from '@/contexts/branding-context';
 
 const navigation = [
     {
@@ -75,17 +77,45 @@ const navigation = [
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     const pathname = usePathname();
+    const { branding, loading } = useBranding();
 
     return (
         <div className="flex h-full flex-col">
             {/* Logo */}
             <div className="flex h-14 items-center gap-2.5 px-4 border-b border-border">
-                <div className="w-7 h-7 rounded-md icon-bg-teal flex items-center justify-center shadow-soft">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <span className="text-sm font-semibold text-foreground">ComplianceOS</span>
+                {loading ? (
+                    <div className="w-7 h-7 rounded-md bg-muted animate-pulse" />
+                ) : branding?.logo_url ? (
+                    <div className="w-7 h-7 rounded-md overflow-hidden relative shadow-soft">
+                        <Image
+                            src={branding.logo_url}
+                            alt={branding.organization_name || 'Organization'}
+                            fill
+                            className="object-contain"
+                            unoptimized
+                        />
+                    </div>
+                ) : (
+                    <div
+                        className="w-7 h-7 rounded-md flex items-center justify-center shadow-soft transition-colors"
+                        style={{
+                            background: branding?.primary_color
+                                ? `linear-gradient(135deg, ${branding.primary_color}, ${branding.secondary_color || branding.primary_color})`
+                                : 'linear-gradient(135deg, #10b981, #0d9488)'
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                )}
+                <span className="text-sm font-semibold text-foreground truncate">
+                    {loading ? (
+                        <span className="inline-block w-24 h-4 bg-muted rounded animate-pulse" />
+                    ) : (
+                        branding?.organization_name || 'ComplianceOS'
+                    )}
+                </span>
             </div>
 
             {/* Navigation */}
@@ -104,6 +134,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                                         ? 'bg-primary/10 text-primary font-medium'
                                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                 )}
+                                style={isActive && branding?.primary_color ? {
+                                    backgroundColor: `${branding.primary_color}15`,
+                                    color: branding.primary_color,
+                                } : undefined}
                             >
                                 <span className="shrink-0">{item.icon}</span>
                                 <span>{item.name}</span>
@@ -116,7 +150,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             {/* Bottom section */}
             <div className="border-t border-border p-3">
                 <div className="rounded-md bg-muted/50 p-2.5 text-center">
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-primary">
+                    <div
+                        className="flex items-center justify-center gap-1.5 text-xs font-medium"
+                        style={{ color: branding?.primary_color || undefined }}
+                    >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -161,3 +198,4 @@ export function Sidebar() {
         </>
     );
 }
+

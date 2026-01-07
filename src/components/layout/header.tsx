@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useBranding } from '@/contexts/branding-context';
 
 interface HeaderProps {
     user?: {
@@ -26,6 +27,7 @@ interface HeaderProps {
 export function Header({ user }: HeaderProps) {
     const router = useRouter();
     const supabase = createClient();
+    const { branding } = useBranding();
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -38,6 +40,11 @@ export function Header({ user }: HeaderProps) {
         .map((n: string) => n[0])
         .join('')
         .toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U';
+
+    // Generate gradient style for avatar based on branding colors
+    const avatarStyle = branding?.primary_color ? {
+        background: `linear-gradient(135deg, ${branding.primary_color}, ${branding.secondary_color || branding.primary_color})`,
+    } : undefined;
 
     return (
         <header className="fixed top-0 left-0 lg:left-60 right-0 z-30 h-14 bg-background/80 backdrop-blur-md border-b border-border">
@@ -55,7 +62,10 @@ export function Header({ user }: HeaderProps) {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
                                 <Avatar className="h-8 w-8 border border-border">
-                                    <AvatarFallback className="icon-bg-teal text-white text-xs font-medium">
+                                    <AvatarFallback
+                                        className="text-white text-xs font-medium"
+                                        style={avatarStyle || { background: 'linear-gradient(135deg, oklch(0.50 0.14 175), oklch(0.55 0.12 185))' }}
+                                    >
                                         {initials}
                                     </AvatarFallback>
                                 </Avatar>
@@ -85,4 +95,5 @@ export function Header({ user }: HeaderProps) {
         </header>
     );
 }
+
 
