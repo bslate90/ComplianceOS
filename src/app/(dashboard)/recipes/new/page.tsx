@@ -103,25 +103,31 @@ export default function NewRecipePage() {
         }));
 
         // Add AI-suggested ingredients as USDA ingredients
-        const newIngredients: RecipeIngredient[] = suggestions.ingredients.map((ing) => ({
-            ingredient_id: `usda-${ing.usda_fdc_id}`,
-            ingredient: {
-                id: `usda-${ing.usda_fdc_id}`,
-                name: ing.name,
-                user_code: null,
-                brand: null,
-                calories: ing.calories,
-                sodium_mg: ing.sodium_mg,
-                protein_g: ing.protein_g,
-                total_fat_g: ing.total_fat_g,
-                total_carbohydrates_g: ing.total_carbohydrates_g,
-                updated_at: new Date().toISOString(),
-                source: 'usda' as const,
-                usda_fdc_id: ing.usda_fdc_id,
-            },
-            amount_g: ing.amount_g,
-        }));
+        console.log('AI Suggestions received:', suggestions);
 
+        const newIngredients: RecipeIngredient[] = suggestions.ingredients.map((ing) => {
+            console.log('Processing ingredient:', ing.name, 'FDC ID:', ing.usda_fdc_id);
+            return {
+                ingredient_id: `usda-${ing.usda_fdc_id}`,
+                ingredient: {
+                    id: `usda-${ing.usda_fdc_id}`,
+                    name: ing.name,
+                    user_code: null,
+                    brand: null,
+                    calories: ing.calories,
+                    sodium_mg: ing.sodium_mg,
+                    protein_g: ing.protein_g,
+                    total_fat_g: ing.total_fat_g,
+                    total_carbohydrates_g: ing.total_carbohydrates_g,
+                    updated_at: new Date().toISOString(),
+                    source: 'usda' as const,
+                    usda_fdc_id: ing.usda_fdc_id,
+                },
+                amount_g: ing.amount_g,
+            };
+        });
+
+        console.log('New ingredients list:', newIngredients.map(ri => ({ name: ri.ingredient.name, amount: ri.amount_g })));
         setRecipeIngredients(newIngredients);
     };
 
@@ -166,6 +172,12 @@ export default function NewRecipePage() {
 
                 for (const ri of usdaIngredients) {
                     const ing = ri.ingredient;
+                    console.log('Saving USDA ingredient to database:', {
+                        name: ing.name,
+                        usda_fdc_id: 'usda_fdc_id' in ing ? ing.usda_fdc_id : null,
+                        fullIngredient: ing
+                    });
+
                     // Create ingredient in database
                     const response = await fetch('/api/ingredients', {
                         method: 'POST',
@@ -190,6 +202,7 @@ export default function NewRecipePage() {
                     }
 
                     const savedIngredient = await response.json();
+                    console.log('Saved ingredient:', savedIngredient);
                     idMapping[ri.ingredient_id] = savedIngredient.id;
                 }
             }
