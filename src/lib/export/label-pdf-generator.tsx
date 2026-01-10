@@ -1,15 +1,29 @@
 /**
- * Label PDF Generator
- * Generates FDA-compliant Nutrition Facts Panel PDFs
+ * FDA-Compliant Label PDF Generator
  * 
- * Supports formats:
- * - Standard Vertical: Full height vertical NFP
- * - Tabular: Side-by-side format for wide packages
- * - Linear: Inline format for small packages
+ * Generates Nutrition Facts Panels per FDA 21 CFR 101.9 specifications.
+ * Includes a Compliance Report page to document FDA compliance validation.
  * 
- * Supports modifiers:
- * - Simplified: Omits nutrients below significance thresholds per FDA 21 CFR 101.9
- *   Can be applied to ANY format to accommodate package sizing
+ * Format Types:
+ * - Standard Vertical: For packages >40 sq in (full format)
+ * - Tabular: For packages 20-40 sq in (side-by-side columns)
+ * - Linear: For packages <40 sq in where vertical/tabular don't fit
+ * 
+ * Modifiers (applicable to any format):
+ * - Simplified: Omits insignificant nutrients per 21 CFR 101.9(f)
+ * 
+ * Font Specifications (per FDA):
+ * - "Nutrition Facts" header: 16pt Helvetica Black
+ * - Calories numeric: 22pt Helvetica Black (bold)
+ * - Serving size: 10pt Helvetica Bold
+ * - Nutrient names: 8pt Helvetica Black (bold main), Regular (sub)
+ * - % Daily Value: 8pt Helvetica Black
+ * - Footnote: 6pt Helvetica Regular
+ * 
+ * Line Rules:
+ * - 7pt rule after header
+ * - 3pt rule above/below calories
+ * - Hairline (0.5pt) between nutrients
  */
 
 import React from 'react'
@@ -19,17 +33,12 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
 } from '@react-pdf/renderer'
+import type { ComplianceReport } from '@/lib/compliance/nfp-validator'
 
-// Register fonts (using Helvetica as fallback, which is built-in)
-Font.register({
-  family: 'Helvetica',
-  fonts: [
-    { src: 'Helvetica' },
-    { src: 'Helvetica-Bold', fontWeight: 'bold' },
-  ],
-})
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface NutritionData {
   calories: number | string
@@ -49,20 +58,27 @@ interface NutritionData {
   potassium: number
 }
 
-interface LabelPDFProps {
+export interface LabelPDFProps {
   productName: string
   servingSize: string
   servingsPerContainer: string | number
   nutritionData: NutritionData
   format?: 'standard_vertical' | 'tabular' | 'linear'
-  simplified?: boolean // Modifier: omit insignificant nutrients
+  simplified?: boolean
   ingredientStatement?: string
   allergenStatement?: string
   companyName?: string
   companyAddress?: string
+  complianceReport?: ComplianceReport
+  raccCategory?: string
+  raccValue?: string
 }
 
-// Daily Values for % calculations (FDA 2020 values)
+// ============================================================================
+// FDA CONSTANTS (21 CFR 101.9)
+// ============================================================================
+
+// Daily Values for % DV calculations (FDA 2020 values)
 const DAILY_VALUES = {
   totalFat: 78,
   saturatedFat: 20,
@@ -77,46 +93,52 @@ const DAILY_VALUES = {
   potassium: 4700,
 }
 
-// FDA Simplified Format Thresholds (21 CFR 101.9)
-// Nutrients can be omitted if below these amounts per serving
+// Simplified Format Thresholds (21 CFR 101.9(f))
 const SIMPLIFIED_THRESHOLDS = {
-  totalFat: 0.5,        // g - can omit if <0.5g
-  saturatedFat: 0.5,    // g
-  transFat: 0.5,        // g
-  cholesterol: 2,       // mg - can omit if <2mg
-  sodium: 5,            // mg - can omit if <5mg (but usually shown)
-  totalCarbohydrates: 1, // g - can omit if <1g
-  dietaryFiber: 1,      // g
-  totalSugars: 1,       // g
-  addedSugars: 1,       // g
-  protein: 1,           // g - can omit if <1g
-  vitaminD: 0,          // mcg - can omit if 0
-  calcium: 0,           // mg
-  iron: 0,              // mg
-  potassium: 0,         // mg
+  totalFat: 0.5,
+  saturatedFat: 0.5,
+  transFat: 0.5,
+  cholesterol: 2,
+  sodium: 5,
+  totalCarbohydrates: 1,
+  dietaryFiber: 1,
+  totalSugars: 1,
+  addedSugars: 1,
+  protein: 1,
+  vitaminD: 0,
+  calcium: 0,
+  iron: 0,
+  potassium: 0,
 }
 
-// Calculate % Daily Value
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
 function calculateDV(nutrient: keyof typeof DAILY_VALUES, amount: number | string): number {
   const value = typeof amount === 'string' ? parseFloat(amount) : amount
   if (isNaN(value) || value <= 0) return 0
   return Math.round((value / DAILY_VALUES[nutrient]) * 100)
 }
 
-// Check if nutrient is below simplified threshold
 function isBelowThreshold(nutrient: keyof typeof SIMPLIFIED_THRESHOLDS, amount: number | string): boolean {
   const value = typeof amount === 'string' ? parseFloat(amount) : amount
   if (isNaN(value)) return true
   return value < SIMPLIFIED_THRESHOLDS[nutrient]
 }
 
-// Parse numeric value
 function parseValue(amount: number | string): number {
   const value = typeof amount === 'string' ? parseFloat(amount) : amount
   return isNaN(value) ? 0 : value
 }
 
-// Determine which nutrients to show based on simplified mode
+function formatAmount(amount: number | string, decimals: number = 0): string {
+  const value = parseValue(amount)
+  if (value < 0.5 && value > 0) return '<1'
+  return value.toFixed(decimals)
+}
+
+// Determine nutrient visibility based on simplified mode
 interface NutrientVisibility {
   showTotalFat: boolean
   showSaturatedFat: boolean
@@ -137,7 +159,6 @@ interface NutrientVisibility {
 
 function getNutrientVisibility(nutritionData: NutritionData, simplified: boolean): NutrientVisibility {
   if (!simplified) {
-    // Show all nutrients in standard mode
     return {
       showTotalFat: true,
       showSaturatedFat: true,
@@ -157,12 +178,11 @@ function getNutrientVisibility(nutritionData: NutritionData, simplified: boolean
     }
   }
 
-  // Simplified mode - check thresholds
   const showTotalFat = !isBelowThreshold('totalFat', nutritionData.totalFat)
   const showSaturatedFat = !isBelowThreshold('saturatedFat', nutritionData.saturatedFat)
   const showTransFat = !isBelowThreshold('transFat', nutritionData.transFat)
   const showCholesterol = !isBelowThreshold('cholesterol', nutritionData.cholesterol)
-  const showSodium = true // Always show sodium per FDA
+  const showSodium = true // Always required per FDA
   const showCarbs = !isBelowThreshold('totalCarbohydrates', nutritionData.totalCarbohydrates)
   const showFiber = !isBelowThreshold('dietaryFiber', nutritionData.dietaryFiber)
   const showSugars = !isBelowThreshold('totalSugars', nutritionData.totalSugars)
@@ -173,7 +193,6 @@ function getNutrientVisibility(nutritionData: NutritionData, simplified: boolean
   const showIron = parseValue(nutritionData.iron) > 0
   const showPotassium = parseValue(nutritionData.potassium) > 0
 
-  // Collect omitted nutrients for "Not a significant source" statement
   const omittedNutrients: string[] = []
   if (!showTotalFat) omittedNutrients.push('total fat')
   if (!showSaturatedFat) omittedNutrients.push('saturated fat')
@@ -204,171 +223,463 @@ function getNutrientVisibility(nutritionData: NutritionData, simplified: boolean
   }
 }
 
-// PDF Styles - with inset separator bars
+// ============================================================================
+// PDF STYLES - FDA Compliant Typography
+// ============================================================================
+
 const styles = StyleSheet.create({
+  // Page styles
   page: {
-    padding: 20,
+    padding: 36, // 0.5 inch margins
     backgroundColor: '#ffffff',
-  },
-  nfpContainer: {
-    border: '1pt solid #000',
-    width: 240,
     fontFamily: 'Helvetica',
   },
+
+  // NFP Container - The black box
+  nfpContainer: {
+    border: '0.5pt solid #000',
+    width: 258, // ~3.6 inches at 72 DPI (FDA standard width)
+    backgroundColor: '#ffffff',
+    padding: 0,
+  },
+
+  // "Nutrition Facts" header - 16pt bold
   header: {
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     paddingTop: 4,
-    paddingBottom: 4,
+    paddingBottom: 2,
     paddingLeft: 4,
     paddingRight: 4,
+    letterSpacing: -0.5,
   },
-  // Thick separator bar with margin from edges
-  thickSeparator: {
-    height: 8,
+
+  // 7pt thick rule after header
+  thickRule: {
+    height: 7,
     backgroundColor: '#000',
     marginLeft: 4,
     marginRight: 4,
-    marginBottom: 2,
   },
-  // Medium separator bar with margin from edges
-  mediumSeparator: {
-    height: 5,
+
+  // 3pt medium rule
+  mediumRule: {
+    height: 3,
     backgroundColor: '#000',
     marginLeft: 4,
     marginRight: 4,
-    marginTop: 2,
-    marginBottom: 2,
+    marginTop: 1,
+    marginBottom: 1,
   },
-  // Thin separator bar with margin from edges
-  thinSeparator: {
-    height: 4,
-    backgroundColor: '#000',
-    marginLeft: 4,
-    marginRight: 4,
-    marginTop: 2,
-    marginBottom: 2,
-  },
-  // Hairline separator for between rows
-  hairlineSeparator: {
+
+  // 1pt thin rule
+  thinRule: {
     height: 1,
     backgroundColor: '#000',
     marginLeft: 4,
     marginRight: 4,
   },
-  // Calories thick separator (larger)
-  caloriesSeparator: {
-    height: 10,
+
+  // Hairline rule (0.5pt)
+  hairlineRule: {
+    height: 0.5,
     backgroundColor: '#000',
     marginLeft: 4,
     marginRight: 4,
-    marginTop: 2,
+  },
+
+  // Serving info section
+  servingSection: {
+    paddingTop: 2,
+    paddingBottom: 2,
+    paddingLeft: 4,
+    paddingRight: 4,
+  },
+
+  servingsPerContainer: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 2,
   },
-  servingInfo: {
-    fontSize: 10,
-    paddingTop: 2,
-    paddingBottom: 2,
-    paddingLeft: 4,
-    paddingRight: 4,
+
+  servingSizeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
   },
-  servingSizeBold: {
-    fontWeight: 'bold',
+
+  servingSizeLabel: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
   },
-  servingsPerContainer: {
-    marginTop: 2,
+
+  servingSizeValue: {
+    fontSize: 9,
+    fontFamily: 'Helvetica',
   },
+
+  // Calories section - 22pt bold value
   caloriesSection: {
-    paddingTop: 2,
-    paddingBottom: 2,
+    paddingTop: 4,
+    paddingBottom: 4,
     paddingLeft: 4,
     paddingRight: 4,
   },
-  caloriesLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
+
+  caloriesHeader: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
   },
+
+  caloriesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+
+  caloriesLabel: {
+    fontSize: 16,
+    fontFamily: 'Helvetica-Bold',
+  },
+
   caloriesValue: {
     fontSize: 22,
-    fontWeight: 'bold',
-    marginTop: 2,
+    fontFamily: 'Helvetica-Bold',
   },
+
+  // % DV header row
   dvHeader: {
     fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
     textAlign: 'right',
     paddingTop: 2,
     paddingBottom: 2,
     paddingLeft: 4,
     paddingRight: 4,
   },
+
+  // Nutrient row
   nutrientRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'baseline',
     paddingTop: 2,
     paddingBottom: 2,
     paddingLeft: 4,
     paddingRight: 4,
-    fontSize: 8,
   },
+
   nutrientName: {
-    fontWeight: 'bold',
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
   },
-  nutrientIndent1: {
-    paddingLeft: 8,
+
+  nutrientValue: {
+    fontSize: 8,
+    fontFamily: 'Helvetica',
   },
-  nutrientIndent2: {
-    paddingLeft: 16,
+
+  nutrientDv: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
   },
-  dvValue: {
-    fontWeight: 'bold',
+
+  // Indented nutrients (sub-nutrients)
+  indent1: {
+    paddingLeft: 12,
   },
-  footnote: {
-    fontSize: 6,
+
+  indent2: {
+    paddingLeft: 20,
+  },
+
+  // Footnote section - 6pt
+  footnoteSection: {
     paddingTop: 4,
     paddingBottom: 4,
     paddingLeft: 4,
     paddingRight: 4,
   },
-  micronutrientRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 2,
-    paddingBottom: 2,
-    paddingLeft: 4,
-    paddingRight: 4,
-    fontSize: 8,
+
+  footnote: {
+    fontSize: 6,
+    fontFamily: 'Helvetica',
+    lineHeight: 1.3,
   },
+
+  // "Not a significant source" statement
   notSignificant: {
-    fontSize: 7,
-    paddingTop: 4,
-    paddingBottom: 2,
+    fontSize: 6,
+    fontFamily: 'Helvetica',
+    fontStyle: 'italic',
+    paddingTop: 2,
+    paddingBottom: 4,
     paddingLeft: 4,
     paddingRight: 4,
-    fontStyle: 'italic',
   },
+
+  // Ingredient statement section
   ingredientSection: {
-    marginTop: 20,
-    padding: 10,
-    border: '1pt solid #ccc',
+    marginTop: 24,
     width: 400,
   },
+
   ingredientTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 4,
   },
+
   ingredientText: {
     fontSize: 8,
+    fontFamily: 'Helvetica',
     lineHeight: 1.4,
   },
-  companyInfo: {
-    marginTop: 20,
+
+  allergenStatement: {
     fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    marginTop: 8,
+  },
+
+  // Company info
+  companyInfo: {
+    marginTop: 24,
+    fontSize: 8,
+    fontFamily: 'Helvetica',
+  },
+
+  companyName: {
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 2,
+  },
+
+  // Product name
+  productTitle: {
+    fontSize: 14,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 16,
+  },
+
+  // =========================================
+  // COMPLIANCE REPORT STYLES
+  // =========================================
+
+  complianceReportPage: {
+    padding: 36,
+    backgroundColor: '#ffffff',
+    fontFamily: 'Helvetica',
+  },
+
+  reportHeader: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 4,
+    color: '#1a1a1a',
+  },
+
+  reportSubheader: {
+    fontSize: 10,
+    fontFamily: 'Helvetica',
+    color: '#666666',
+    marginBottom: 20,
+  },
+
+  reportSection: {
+    marginBottom: 20,
+  },
+
+  reportSectionTitle: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 8,
+    paddingBottom: 4,
+    borderBottom: '1pt solid #cccccc',
+  },
+
+  reportSummary: {
+    flexDirection: 'row',
+    gap: 20,
+    marginBottom: 16,
+  },
+
+  summaryBox: {
+    padding: 12,
+    borderRadius: 4,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+
+  summaryBoxCompliant: {
+    backgroundColor: '#dcfce7',
+    borderWidth: 1,
+    borderColor: '#16a34a',
+  },
+
+  summaryBoxWarning: {
+    backgroundColor: '#fef3c7',
+    borderWidth: 1,
+    borderColor: '#d97706',
+  },
+
+  summaryBoxError: {
+    backgroundColor: '#fee2e2',
+    borderWidth: 1,
+    borderColor: '#dc2626',
+  },
+
+  summaryLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica',
+    color: '#666666',
+    marginBottom: 4,
+  },
+
+  summaryValue: {
+    fontSize: 20,
+    fontFamily: 'Helvetica-Bold',
+  },
+
+  summaryValueCompliant: {
+    color: '#16a34a',
+  },
+
+  summaryValueWarning: {
+    color: '#d97706',
+  },
+
+  summaryValueError: {
+    color: '#dc2626',
+  },
+
+  resultRow: {
+    flexDirection: 'row',
+    paddingTop: 8,
+    paddingBottom: 8,
+    borderBottom: '0.5pt solid #e5e5e5',
+  },
+
+  resultIcon: {
+    width: 16,
+    marginRight: 8,
+    fontSize: 10,
+  },
+
+  resultContent: {
+    flex: 1,
+  },
+
+  resultTitle: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 2,
+  },
+
+  resultMessage: {
+    fontSize: 8,
+    fontFamily: 'Helvetica',
+    color: '#666666',
+  },
+
+  resultCfr: {
+    fontSize: 7,
+    fontFamily: 'Helvetica',
+    color: '#999999',
+    marginTop: 2,
+  },
+
+  passText: {
+    color: '#16a34a',
+  },
+
+  warnText: {
+    color: '#d97706',
+  },
+
+  failText: {
+    color: '#dc2626',
+  },
+
+  // Nutrient values used section
+  nutrientTable: {
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+    marginTop: 8,
+  },
+
+  nutrientTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+
+  nutrientTableRow: {
+    flexDirection: 'row',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e5e5e5',
+  },
+
+  nutrientTableCell: {
+    fontSize: 8,
+    fontFamily: 'Helvetica',
+  },
+
+  nutrientTableCellBold: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+  },
+
+  cellNutrient: {
+    width: 140,
+  },
+
+  cellAmount: {
+    width: 80,
+    textAlign: 'right',
+  },
+
+  cellDv: {
+    width: 60,
+    textAlign: 'right',
+  },
+
+  cellRounding: {
+    width: 140,
+  },
+
+  pageFooter: {
+    position: 'absolute',
+    bottom: 24,
+    left: 36,
+    right: 36,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e5e5',
+    paddingTop: 8,
+  },
+
+  footerText: {
+    fontSize: 7,
+    color: '#999999',
   },
 })
 
-// Standard Vertical NFP Component (with optional simplified modifier)
-const StandardVerticalNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibility }> = ({
+// ============================================================================
+// STANDARD VERTICAL NFP COMPONENT
+// ============================================================================
+
+interface NFPProps extends LabelPDFProps {
+  visibility: NutrientVisibility
+}
+
+const StandardVerticalNFP: React.FC<NFPProps> = ({
   servingSize,
   servingsPerContainer,
   nutritionData,
@@ -385,77 +696,75 @@ const StandardVerticalNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibi
     <View style={styles.nfpContainer}>
       {/* Header */}
       <Text style={styles.header}>Nutrition Facts</Text>
-
-      {/* Thick separator under header */}
-      <View style={styles.thickSeparator} />
+      <View style={styles.thickRule} />
 
       {/* Serving Info */}
-      <View style={styles.servingInfo}>
-        <Text style={styles.servingSizeBold}>
-          Serving size <Text>{servingSize}</Text>
-        </Text>
+      <View style={styles.servingSection}>
         <Text style={styles.servingsPerContainer}>
-          Servings per container {servingsPerContainer}
+          {servingsPerContainer} servings per container
         </Text>
-      </View>
-
-      {/* Medium separator */}
-      <View style={styles.mediumSeparator} />
-
-      {/* Calories */}
-      <View style={styles.caloriesSection}>
-        <Text style={styles.caloriesLabel}>Amount per serving</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={styles.caloriesLabel}>Calories</Text>
-          <Text style={styles.caloriesValue}>{nutritionData.calories}</Text>
+        <View style={styles.servingSizeRow}>
+          <Text style={styles.servingSizeLabel}>Serving size</Text>
+          <Text style={styles.servingSizeLabel}>{servingSize}</Text>
         </View>
       </View>
 
-      {/* Thick separator under calories */}
-      <View style={styles.caloriesSeparator} />
+      <View style={styles.thickRule} />
 
-      {/* % Daily Value Header */}
+      {/* Calories */}
+      <View style={styles.caloriesSection}>
+        <Text style={styles.caloriesHeader}>Amount per serving</Text>
+        <View style={styles.caloriesRow}>
+          <Text style={styles.caloriesLabel}>Calories</Text>
+          <Text style={styles.caloriesValue}>{formatAmount(nutritionData.calories)}</Text>
+        </View>
+      </View>
+
+      <View style={styles.mediumRule} />
+
+      {/* % DV Header */}
       <Text style={styles.dvHeader}>% Daily Value*</Text>
-
-      {/* Thin separator */}
-      <View style={styles.thinSeparator} />
+      <View style={styles.hairlineRule} />
 
       {/* Total Fat */}
       {showTotalFat && (
         <>
           <View style={styles.nutrientRow}>
             <Text>
-              <Text style={styles.nutrientName}>Total Fat</Text> {nutritionData.totalFat}g
+              <Text style={styles.nutrientName}>Total Fat </Text>
+              <Text style={styles.nutrientValue}>{formatAmount(nutritionData.totalFat)}g</Text>
             </Text>
-            <Text style={styles.dvValue}>{calculateDV('totalFat', nutritionData.totalFat)}%</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('totalFat', nutritionData.totalFat)}%</Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
       {/* Saturated Fat */}
       {showSaturatedFat && (
         <>
-          <View style={styles.nutrientRow}>
-            <Text style={showTotalFat ? styles.nutrientIndent1 : undefined}>
-              Saturated Fat {nutritionData.saturatedFat}g
+          <View style={[styles.nutrientRow, styles.indent1]}>
+            <Text>
+              <Text style={styles.nutrientValue}>Saturated Fat </Text>
+              <Text style={styles.nutrientValue}>{formatAmount(nutritionData.saturatedFat)}g</Text>
             </Text>
-            <Text style={styles.dvValue}>{calculateDV('saturatedFat', nutritionData.saturatedFat)}%</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('saturatedFat', nutritionData.saturatedFat)}%</Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
       {/* Trans Fat */}
       {showTransFat && (
         <>
-          <View style={styles.nutrientRow}>
-            <Text style={showTotalFat ? styles.nutrientIndent1 : undefined}>
-              <Text style={{ fontStyle: 'italic' }}>Trans</Text> Fat {nutritionData.transFat}g
+          <View style={[styles.nutrientRow, styles.indent1]}>
+            <Text>
+              <Text style={[styles.nutrientValue, { fontStyle: 'italic' }]}>Trans </Text>
+              <Text style={styles.nutrientValue}>Fat {formatAmount(nutritionData.transFat)}g</Text>
             </Text>
             <Text></Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
@@ -464,137 +773,137 @@ const StandardVerticalNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibi
         <>
           <View style={styles.nutrientRow}>
             <Text>
-              <Text style={styles.nutrientName}>Cholesterol</Text> {nutritionData.cholesterol}mg
+              <Text style={styles.nutrientName}>Cholesterol </Text>
+              <Text style={styles.nutrientValue}>{formatAmount(nutritionData.cholesterol)}mg</Text>
             </Text>
-            <Text style={styles.dvValue}>{calculateDV('cholesterol', nutritionData.cholesterol)}%</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('cholesterol', nutritionData.cholesterol)}%</Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
-      {/* Sodium - always shown */}
+      {/* Sodium (always shown) */}
       <View style={styles.nutrientRow}>
         <Text>
-          <Text style={styles.nutrientName}>Sodium</Text> {nutritionData.sodium}mg
+          <Text style={styles.nutrientName}>Sodium </Text>
+          <Text style={styles.nutrientValue}>{formatAmount(nutritionData.sodium)}mg</Text>
         </Text>
-        <Text style={styles.dvValue}>{calculateDV('sodium', nutritionData.sodium)}%</Text>
+        <Text style={styles.nutrientDv}>{calculateDV('sodium', nutritionData.sodium)}%</Text>
       </View>
-      <View style={styles.hairlineSeparator} />
+      <View style={styles.hairlineRule} />
 
       {/* Total Carbohydrates */}
       {showCarbs && (
         <>
           <View style={styles.nutrientRow}>
             <Text>
-              <Text style={styles.nutrientName}>Total Carbohydrate</Text>{' '}
-              {nutritionData.totalCarbohydrates}g
+              <Text style={styles.nutrientName}>Total Carbohydrate </Text>
+              <Text style={styles.nutrientValue}>{formatAmount(nutritionData.totalCarbohydrates)}g</Text>
             </Text>
-            <Text style={styles.dvValue}>{calculateDV('totalCarbohydrates', nutritionData.totalCarbohydrates)}%</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('totalCarbohydrates', nutritionData.totalCarbohydrates)}%</Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
       {/* Dietary Fiber */}
       {showFiber && (
         <>
-          <View style={styles.nutrientRow}>
-            <Text style={showCarbs ? styles.nutrientIndent1 : undefined}>
-              Dietary Fiber {nutritionData.dietaryFiber}g
+          <View style={[styles.nutrientRow, styles.indent1]}>
+            <Text>
+              <Text style={styles.nutrientValue}>Dietary Fiber </Text>
+              <Text style={styles.nutrientValue}>{formatAmount(nutritionData.dietaryFiber)}g</Text>
             </Text>
-            <Text style={styles.dvValue}>{calculateDV('dietaryFiber', nutritionData.dietaryFiber)}%</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('dietaryFiber', nutritionData.dietaryFiber)}%</Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
       {/* Total Sugars */}
       {showSugars && (
         <>
-          <View style={styles.nutrientRow}>
-            <Text style={showCarbs ? styles.nutrientIndent1 : undefined}>
-              Total Sugars {nutritionData.totalSugars}g
+          <View style={[styles.nutrientRow, styles.indent1]}>
+            <Text>
+              <Text style={styles.nutrientValue}>Total Sugars </Text>
+              <Text style={styles.nutrientValue}>{formatAmount(nutritionData.totalSugars)}g</Text>
             </Text>
             <Text></Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
       {/* Added Sugars */}
       {showAddedSugars && (
         <>
-          <View style={styles.nutrientRow}>
-            <Text style={showCarbs ? styles.nutrientIndent2 : styles.nutrientIndent1}>
-              Includes {nutritionData.addedSugars}g Added Sugars
+          <View style={[styles.nutrientRow, styles.indent2]}>
+            <Text>
+              <Text style={styles.nutrientValue}>Includes </Text>
+              <Text style={styles.nutrientValue}>{formatAmount(nutritionData.addedSugars)}g Added Sugars</Text>
             </Text>
-            <Text style={styles.dvValue}>{calculateDV('addedSugars', nutritionData.addedSugars)}%</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('addedSugars', nutritionData.addedSugars)}%</Text>
           </View>
+          <View style={styles.hairlineRule} />
         </>
       )}
-
-      {/* Medium separator */}
-      <View style={styles.mediumSeparator} />
 
       {/* Protein */}
       {showProtein && (
         <>
           <View style={styles.nutrientRow}>
             <Text>
-              <Text style={styles.nutrientName}>Protein</Text> {nutritionData.protein}g
+              <Text style={styles.nutrientName}>Protein </Text>
+              <Text style={styles.nutrientValue}>{formatAmount(nutritionData.protein)}g</Text>
             </Text>
             <Text></Text>
           </View>
-
-          {/* Medium separator before micronutrients */}
-          <View style={styles.mediumSeparator} />
         </>
       )}
+
+      <View style={styles.thickRule} />
 
       {/* Micronutrients */}
       {showVitaminD && (
         <>
-          <View style={styles.micronutrientRow}>
-            <Text>Vitamin D {nutritionData.vitaminD}mcg</Text>
-            <Text style={styles.dvValue}>{calculateDV('vitaminD', nutritionData.vitaminD)}%</Text>
+          <View style={styles.nutrientRow}>
+            <Text style={styles.nutrientValue}>Vitamin D {nutritionData.vitaminD}mcg</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('vitaminD', nutritionData.vitaminD)}%</Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
       {showCalcium && (
         <>
-          <View style={styles.micronutrientRow}>
-            <Text>Calcium {nutritionData.calcium}mg</Text>
-            <Text style={styles.dvValue}>{calculateDV('calcium', nutritionData.calcium)}%</Text>
+          <View style={styles.nutrientRow}>
+            <Text style={styles.nutrientValue}>Calcium {nutritionData.calcium}mg</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('calcium', nutritionData.calcium)}%</Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
       {showIron && (
         <>
-          <View style={styles.micronutrientRow}>
-            <Text>Iron {nutritionData.iron}mg</Text>
-            <Text style={styles.dvValue}>{calculateDV('iron', nutritionData.iron)}%</Text>
+          <View style={styles.nutrientRow}>
+            <Text style={styles.nutrientValue}>Iron {nutritionData.iron}mg</Text>
+            <Text style={styles.nutrientDv}>{calculateDV('iron', nutritionData.iron)}%</Text>
           </View>
-          <View style={styles.hairlineSeparator} />
+          <View style={styles.hairlineRule} />
         </>
       )}
 
       {showPotassium && (
-        <>
-          <View style={styles.micronutrientRow}>
-            <Text>Potassium {nutritionData.potassium}mg</Text>
-            <Text style={styles.dvValue}>{calculateDV('potassium', nutritionData.potassium)}%</Text>
-          </View>
-        </>
+        <View style={styles.nutrientRow}>
+          <Text style={styles.nutrientValue}>Potassium {nutritionData.potassium}mg</Text>
+          <Text style={styles.nutrientDv}>{calculateDV('potassium', nutritionData.potassium)}%</Text>
+        </View>
       )}
 
-      {/* Thin separator */}
-      <View style={styles.thinSeparator} />
+      <View style={styles.thinRule} />
 
-      {/* Not a significant source statement - only in simplified mode */}
+      {/* Not a significant source statement */}
       {omittedNutrients.length > 0 && (
         <Text style={styles.notSignificant}>
           Not a significant source of {omittedNutrients.join(', ')}.
@@ -602,31 +911,197 @@ const StandardVerticalNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibi
       )}
 
       {/* Footnote */}
-      <View style={styles.footnote}>
-        <Text>
-          * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes
-          to a daily diet. 2,000 calories a day is used for general nutrition advice.
+      <View style={styles.footnoteSection}>
+        <Text style={styles.footnote}>
+          * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.
         </Text>
       </View>
     </View>
   )
 }
 
-// TODO: Tabular NFP Component (side-by-side format)
-const TabularNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibility }> = (props) => {
-  // For now, fallback to vertical format
-  // Tabular format would arrange nutrients in columns
-  return <StandardVerticalNFP {...props} />
+// Tabular and Linear formats fall back to Standard for now
+const TabularNFP: React.FC<NFPProps> = (props) => <StandardVerticalNFP {...props} />
+const LinearNFP: React.FC<NFPProps> = (props) => <StandardVerticalNFP {...props} />
+
+// ============================================================================
+// COMPLIANCE REPORT PAGE
+// ============================================================================
+
+interface ComplianceReportPageProps {
+  productName: string
+  report: ComplianceReport
+  nutritionData: NutritionData
+  servingSize: string
+  raccCategory?: string
+  raccValue?: string
+  validatedAt: string
 }
 
-// TODO: Linear NFP Component (inline format for small packages)
-const LinearNFP: React.FC<LabelPDFProps & { visibility: NutrientVisibility }> = (props) => {
-  // For now, fallback to vertical format
-  // Linear format would be a single line or minimal rows
-  return <StandardVerticalNFP {...props} />
+const ComplianceReportPage: React.FC<ComplianceReportPageProps> = ({
+  productName,
+  report,
+  nutritionData,
+  servingSize,
+  raccCategory,
+  raccValue,
+  validatedAt,
+}) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'compliant': return styles.summaryBoxCompliant
+      case 'warnings': return styles.summaryBoxWarning
+      default: return styles.summaryBoxError
+    }
+  }
+
+  const getValueColor = (status: string) => {
+    switch (status) {
+      case 'compliant': return styles.summaryValueCompliant
+      case 'warnings': return styles.summaryValueWarning
+      default: return styles.summaryValueError
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'compliant': return 'COMPLIANT'
+      case 'warnings': return 'WARNINGS'
+      case 'errors': return 'ERRORS'
+      default: return 'NOT VALIDATED'
+    }
+  }
+
+  return (
+    <Page size="LETTER" style={styles.complianceReportPage}>
+      {/* Header */}
+      <Text style={styles.reportHeader}>FDA Compliance Report</Text>
+      <Text style={styles.reportSubheader}>
+        {productName} • Validated: {new Date(validatedAt).toLocaleString()}
+      </Text>
+
+      {/* Summary Boxes */}
+      <View style={styles.reportSummary}>
+        <View style={[styles.summaryBox, getStatusColor(report.overall_status)]}>
+          <Text style={styles.summaryLabel}>Status</Text>
+          <Text style={[styles.summaryValue, getValueColor(report.overall_status), { fontSize: 14 }]}>
+            {getStatusLabel(report.overall_status)}
+          </Text>
+        </View>
+        <View style={[styles.summaryBox, report.errors_count > 0 ? styles.summaryBoxError : styles.summaryBoxCompliant]}>
+          <Text style={styles.summaryLabel}>Errors</Text>
+          <Text style={[styles.summaryValue, report.errors_count > 0 ? styles.summaryValueError : styles.summaryValueCompliant]}>
+            {report.errors_count}
+          </Text>
+        </View>
+        <View style={[styles.summaryBox, report.warnings_count > 0 ? styles.summaryBoxWarning : styles.summaryBoxCompliant]}>
+          <Text style={styles.summaryLabel}>Warnings</Text>
+          <Text style={[styles.summaryValue, report.warnings_count > 0 ? styles.summaryValueWarning : styles.summaryValueCompliant]}>
+            {report.warnings_count}
+          </Text>
+        </View>
+      </View>
+
+      {/* RACC Information */}
+      {raccCategory && (
+        <View style={styles.reportSection}>
+          <Text style={styles.reportSectionTitle}>Reference Amount (RACC)</Text>
+          <View style={styles.nutrientTableRow}>
+            <Text style={[styles.nutrientTableCellBold, { width: 100 }]}>Category:</Text>
+            <Text style={styles.nutrientTableCell}>{raccCategory}</Text>
+          </View>
+          {raccValue && (
+            <View style={styles.nutrientTableRow}>
+              <Text style={[styles.nutrientTableCellBold, { width: 100 }]}>RACC Value:</Text>
+              <Text style={styles.nutrientTableCell}>{raccValue}</Text>
+            </View>
+          )}
+          <View style={styles.nutrientTableRow}>
+            <Text style={[styles.nutrientTableCellBold, { width: 100 }]}>Serving Size:</Text>
+            <Text style={styles.nutrientTableCell}>{servingSize}</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Nutrient Values Used */}
+      <View style={styles.reportSection}>
+        <Text style={styles.reportSectionTitle}>Nutrient Values Used for Compliance</Text>
+        <View style={styles.nutrientTable}>
+          <View style={styles.nutrientTableHeader}>
+            <Text style={[styles.nutrientTableCellBold, styles.cellNutrient]}>Nutrient</Text>
+            <Text style={[styles.nutrientTableCellBold, styles.cellAmount]}>Amount</Text>
+            <Text style={[styles.nutrientTableCellBold, styles.cellDv]}>% DV</Text>
+            <Text style={[styles.nutrientTableCellBold, styles.cellRounding]}>Per 21 CFR 101.9</Text>
+          </View>
+          {[
+            { name: 'Calories', value: nutritionData.calories, unit: '', dv: null },
+            { name: 'Total Fat', value: nutritionData.totalFat, unit: 'g', dv: calculateDV('totalFat', nutritionData.totalFat) },
+            { name: 'Saturated Fat', value: nutritionData.saturatedFat, unit: 'g', dv: calculateDV('saturatedFat', nutritionData.saturatedFat) },
+            { name: 'Trans Fat', value: nutritionData.transFat, unit: 'g', dv: null },
+            { name: 'Cholesterol', value: nutritionData.cholesterol, unit: 'mg', dv: calculateDV('cholesterol', nutritionData.cholesterol) },
+            { name: 'Sodium', value: nutritionData.sodium, unit: 'mg', dv: calculateDV('sodium', nutritionData.sodium) },
+            { name: 'Total Carbohydrate', value: nutritionData.totalCarbohydrates, unit: 'g', dv: calculateDV('totalCarbohydrates', nutritionData.totalCarbohydrates) },
+            { name: 'Dietary Fiber', value: nutritionData.dietaryFiber, unit: 'g', dv: calculateDV('dietaryFiber', nutritionData.dietaryFiber) },
+            { name: 'Total Sugars', value: nutritionData.totalSugars, unit: 'g', dv: null },
+            { name: 'Added Sugars', value: nutritionData.addedSugars, unit: 'g', dv: calculateDV('addedSugars', nutritionData.addedSugars) },
+            { name: 'Protein', value: nutritionData.protein, unit: 'g', dv: null },
+            { name: 'Vitamin D', value: nutritionData.vitaminD, unit: 'mcg', dv: calculateDV('vitaminD', nutritionData.vitaminD) },
+            { name: 'Calcium', value: nutritionData.calcium, unit: 'mg', dv: calculateDV('calcium', nutritionData.calcium) },
+            { name: 'Iron', value: nutritionData.iron, unit: 'mg', dv: calculateDV('iron', nutritionData.iron) },
+            { name: 'Potassium', value: nutritionData.potassium, unit: 'mg', dv: calculateDV('potassium', nutritionData.potassium) },
+          ].map((nutrient, index) => (
+            <View key={index} style={styles.nutrientTableRow}>
+              <Text style={[styles.nutrientTableCell, styles.cellNutrient]}>{nutrient.name}</Text>
+              <Text style={[styles.nutrientTableCell, styles.cellAmount]}>
+                {formatAmount(nutrient.value)}{nutrient.unit}
+              </Text>
+              <Text style={[styles.nutrientTableCell, styles.cellDv]}>
+                {nutrient.dv !== null ? `${nutrient.dv}%` : '—'}
+              </Text>
+              <Text style={[styles.nutrientTableCell, styles.cellRounding]}>Rounded per §101.9(c)</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Validation Results */}
+      {report.validation_results && report.validation_results.length > 0 && (
+        <View style={styles.reportSection}>
+          <Text style={styles.reportSectionTitle}>Validation Results</Text>
+          {report.validation_results.map((result, index) => (
+            <View key={index} style={styles.resultRow}>
+              <Text style={[
+                styles.resultIcon,
+                result.status === 'pass' ? styles.passText :
+                  result.status === 'warning' ? styles.warnText : styles.failText
+              ]}>
+                {result.status === 'pass' ? '✓' : result.status === 'warning' ? '⚠' : '✗'}
+              </Text>
+              <View style={styles.resultContent}>
+                <Text style={styles.resultTitle}>{result.rule_name}</Text>
+                <Text style={styles.resultMessage}>{result.message}</Text>
+                {result.cfr_reference && (
+                  <Text style={styles.resultCfr}>Reference: {result.cfr_reference}</Text>
+                )}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Footer */}
+      <View style={styles.pageFooter}>
+        <Text style={styles.footerText}>ComplianceOS FDA Label Compliance Report</Text>
+        <Text style={styles.footerText}>Generated: {new Date().toISOString()}</Text>
+      </View>
+    </Page>
+  )
 }
 
-// Main Label PDF Document
+// ============================================================================
+// MAIN DOCUMENT COMPONENT
+// ============================================================================
+
 export const LabelPDFDocument: React.FC<LabelPDFProps> = (props) => {
   const {
     productName,
@@ -637,38 +1112,37 @@ export const LabelPDFDocument: React.FC<LabelPDFProps> = (props) => {
     format = 'standard_vertical',
     simplified = false,
     nutritionData,
+    servingSize,
+    complianceReport,
+    raccCategory,
+    raccValue,
   } = props
 
-  // Calculate nutrient visibility based on simplified modifier
   const visibility = getNutrientVisibility(nutritionData, simplified)
 
-  // Select the appropriate format component
   const renderNFP = () => {
+    const nfpProps = { ...props, visibility }
     switch (format) {
       case 'tabular':
-        return <TabularNFP {...props} visibility={visibility} />
+        return <TabularNFP {...nfpProps} />
       case 'linear':
-        return <LinearNFP {...props} visibility={visibility} />
+        return <LinearNFP {...nfpProps} />
       case 'standard_vertical':
       default:
-        return <StandardVerticalNFP {...props} visibility={visibility} />
+        return <StandardVerticalNFP {...nfpProps} />
     }
   }
 
   return (
     <Document>
+      {/* Page 1: Nutrition Facts Label */}
       <Page size="LETTER" style={styles.page}>
-        {/* Product Name */}
         {productName && (
-          <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 10 }}>
-            {productName}
-          </Text>
+          <Text style={styles.productTitle}>{productName}</Text>
         )}
 
-        {/* Nutrition Facts Panel - format with optional simplified modifier */}
         {renderNFP()}
 
-        {/* Ingredient Statement */}
         {ingredientStatement && (
           <View style={styles.ingredientSection}>
             <Text style={styles.ingredientTitle}>INGREDIENTS:</Text>
@@ -676,22 +1150,32 @@ export const LabelPDFDocument: React.FC<LabelPDFProps> = (props) => {
           </View>
         )}
 
-        {/* Allergen Statement */}
         {allergenStatement && (
-          <View style={styles.ingredientSection}>
-            <Text style={styles.ingredientTitle}>CONTAINS:</Text>
-            <Text style={styles.ingredientText}>{allergenStatement}</Text>
-          </View>
+          <Text style={styles.allergenStatement}>
+            CONTAINS: {allergenStatement}
+          </Text>
         )}
 
-        {/* Company Info */}
         {companyName && (
           <View style={styles.companyInfo}>
-            <Text style={{ fontWeight: 'bold' }}>{companyName}</Text>
+            <Text style={styles.companyName}>{companyName}</Text>
             {companyAddress && <Text>{companyAddress}</Text>}
           </View>
         )}
       </Page>
+
+      {/* Page 2: Compliance Report (if provided) */}
+      {complianceReport && (
+        <ComplianceReportPage
+          productName={productName}
+          report={complianceReport}
+          nutritionData={nutritionData}
+          servingSize={servingSize}
+          raccCategory={raccCategory}
+          raccValue={raccValue}
+          validatedAt={complianceReport.validated_at}
+        />
+      )}
     </Document>
   )
 }

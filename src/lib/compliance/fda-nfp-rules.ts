@@ -95,29 +95,10 @@ export const NFP_FORMAT_RULES: ComplianceRule[] = [
       cannot_accommodate_vertical_or_tabular: true,
     },
   },
-  {
-    id: 'nfp-format-simplified',
-    rule_type: 'nfp_format',
-    rule_category: 'conditional',
-    rule_name: 'Simplified Format',
-    description: 'Simplified format for small packages (<12 sq in total surface area)',
-    requirements: {
-      max_package_surface_area: 12, // square inches
-      format_type: 'simplified',
-      allowed_nutrients: [
-        'calories',
-        'total_fat',
-        'total_carbohydrates',
-        'protein',
-        'sodium',
-      ],
-    },
-    cfr_reference: '21 CFR 101.9(f)',
-    severity: 'info',
-    applicable_to: {
-      package_surface_area: { max: 12 },
-    },
-  },
+  // NOTE: "Simplified" is NOT a format - it's a MODIFIER that can be applied to ANY format
+  // when nutrients are below FDA significance thresholds per 21 CFR 101.9(f).
+  // The simplified modifier allows omission of insignificant nutrients and requires
+  // the "Not a significant source of..." statement.
 ]
 
 /**

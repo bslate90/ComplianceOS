@@ -109,18 +109,34 @@ export async function POST(request: NextRequest) {
     const { renderToStream } = await import('@react-pdf/renderer')
     const { LabelPDFDocument } = await import('@/lib/export/label-pdf-generator')
 
-    // Generate PDF
+    // Fetch organization info for company details
+    const { data: orgSettings } = await supabase
+      .from('organization_settings')
+      .select('company_address, footer_text')
+      .eq('organization_id', profile.organization_id)
+      .single()
+
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('id', profile.organization_id)
+      .single()
+
+    // Generate PDF with Compliance Report
     const pdfDocument = LabelPDFDocument({
       productName: label.name || (label.recipe as { name?: string })?.name || 'Untitled Product',
       servingSize: label.serving_size_household ?? `${label.serving_size_g}g`,
-      servingsPerContainer:
-        label.servings_per_container?.toString() || 'Not specified',
+      servingsPerContainer: label.servings_per_container?.toString() || 'Not specified',
       nutritionData: label.nutrition_data as unknown as NutritionData,
-      format: (label.format === 'fda_vertical' ? 'standard_vertical' : label.format) as 'standard_vertical' | 'tabular' | 'linear',
+      format: (label.format === 'fda_vertical'
+        ? 'standard_vertical'
+        : label.format) as 'standard_vertical' | 'tabular' | 'linear',
+      simplified: label.simplified ?? false, // Use the separate simplified boolean field
       ingredientStatement: label.ingredient_statement,
       allergenStatement: label.allergen_statement ?? undefined,
-      companyName: 'Your Company Name', // TODO: Get from organization
-      companyAddress: 'Your Company Address', // TODO: Get from organization
+      companyName: org?.name || 'Your Company Name',
+      companyAddress: orgSettings?.company_address || undefined,
+      complianceReport: validationReport, // Include the compliance report in the PDF
     })
 
     // Render PDF to stream

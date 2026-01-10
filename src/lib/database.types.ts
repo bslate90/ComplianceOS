@@ -280,7 +280,8 @@ export interface Database {
                     organization_id: string
                     recipe_id: string
                     name: string
-                    format: 'fda_vertical' | 'standard_vertical' | 'tabular' | 'linear' | 'simplified'
+                    format: 'fda_vertical' | 'standard_vertical' | 'tabular' | 'linear'
+                    simplified: boolean | null // Modifier: omit insignificant nutrients
                     nutrition_data: Json
                     ingredient_statement: string
                     allergen_statement: string | null
@@ -302,7 +303,8 @@ export interface Database {
                     organization_id: string
                     recipe_id: string
                     name: string
-                    format?: 'fda_vertical' | 'standard_vertical' | 'tabular' | 'linear' | 'simplified'
+                    format?: 'fda_vertical' | 'standard_vertical' | 'tabular' | 'linear'
+                    simplified?: boolean | null
                     nutrition_data: Json
                     ingredient_statement: string
                     allergen_statement?: string | null
@@ -324,7 +326,8 @@ export interface Database {
                     organization_id?: string
                     recipe_id?: string
                     name?: string
-                    format?: 'fda_vertical' | 'standard_vertical' | 'tabular' | 'linear' | 'simplified'
+                    format?: 'fda_vertical' | 'standard_vertical' | 'tabular' | 'linear'
+                    simplified?: boolean | null
                     nutrition_data?: Json
                     ingredient_statement?: string
                     allergen_statement?: string | null

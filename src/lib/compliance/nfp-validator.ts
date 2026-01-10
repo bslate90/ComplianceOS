@@ -53,7 +53,8 @@ export interface LabelData {
   serving_size_g?: number
   serving_size_household?: string
   servings_per_container?: number
-  format?: 'standard_vertical' | 'tabular' | 'linear' | 'simplified'
+  format?: 'standard_vertical' | 'tabular' | 'linear'
+  simplified?: boolean // Modifier: omit insignificant nutrients per 21 CFR 101.9(f)
   package_surface_area?: number // square inches
   claim_statements?: string[]
   racc_category_id?: string // FDA RACC category ID for serving size validation
@@ -161,16 +162,14 @@ function validateNFPFormat(labelData: LabelData): ValidationResult[] {
   const packageSize = labelData.package_surface_area || 100 // default to large package
 
   // Check if format matches package size requirements
+  // Note: 'simplified' is a modifier, not a format - it's handled separately
   const applicableRule = formatRules.find((rule) => {
-    const reqs = rule.requirements
     if (format === 'standard_vertical' && packageSize >= 40) {
       return rule.id === 'nfp-format-standard'
     } else if (format === 'tabular' && packageSize >= 20 && packageSize <= 40) {
       return rule.id === 'nfp-format-tabular'
     } else if (format === 'linear' && packageSize < 40) {
       return rule.id === 'nfp-format-linear'
-    } else if (format === 'simplified' && packageSize < 12) {
-      return rule.id === 'nfp-format-simplified'
     }
     return false
   })
