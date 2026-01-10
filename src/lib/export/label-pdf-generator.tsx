@@ -236,39 +236,41 @@ const styles = StyleSheet.create({
   },
 
   // NFP Container - The black box
+  // FDA standard NFP width is approximately 2 inches (144pt at 72 DPI)
+  // Using 150pt for slight padding
   nfpContainer: {
     border: '0.5pt solid #000',
-    width: 258, // ~3.6 inches at 72 DPI (FDA standard width)
+    width: 150, // ~2.08 inches - matches FDA Food Labeling Guide
     backgroundColor: '#ffffff',
     padding: 0,
   },
 
-  // "Nutrition Facts" header - 16pt bold
+  // "Nutrition Facts" header - scaled for 2" width
   header: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
-    paddingTop: 4,
-    paddingBottom: 2,
-    paddingLeft: 4,
-    paddingRight: 4,
-    letterSpacing: -0.5,
+    paddingTop: 2,
+    paddingBottom: 1,
+    paddingLeft: 3,
+    paddingRight: 3,
+    letterSpacing: -0.3,
   },
 
-  // 7pt thick rule after header
+  // 5pt thick rule after header (scaled from 7pt)
   thickRule: {
-    height: 7,
+    height: 5,
     backgroundColor: '#000',
-    marginLeft: 4,
-    marginRight: 4,
+    marginLeft: 3,
+    marginRight: 3,
   },
 
-  // 3pt medium rule
+  // 2pt medium rule (scaled from 3pt)
   mediumRule: {
-    height: 3,
+    height: 2,
     backgroundColor: '#000',
-    marginLeft: 4,
-    marginRight: 4,
+    marginLeft: 3,
+    marginRight: 3,
     marginTop: 1,
     marginBottom: 1,
   },
@@ -277,30 +279,30 @@ const styles = StyleSheet.create({
   thinRule: {
     height: 1,
     backgroundColor: '#000',
-    marginLeft: 4,
-    marginRight: 4,
+    marginLeft: 3,
+    marginRight: 3,
   },
 
   // Hairline rule (0.5pt)
   hairlineRule: {
     height: 0.5,
     backgroundColor: '#000',
-    marginLeft: 4,
-    marginRight: 4,
+    marginLeft: 3,
+    marginRight: 3,
   },
 
   // Serving info section
   servingSection: {
-    paddingTop: 2,
-    paddingBottom: 2,
-    paddingLeft: 4,
-    paddingRight: 4,
+    paddingTop: 1,
+    paddingBottom: 1,
+    paddingLeft: 3,
+    paddingRight: 3,
   },
 
   servingsPerContainer: {
-    fontSize: 9,
+    fontSize: 7,
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 2,
+    marginBottom: 1,
   },
 
   servingSizeRow: {
@@ -310,25 +312,25 @@ const styles = StyleSheet.create({
   },
 
   servingSizeLabel: {
-    fontSize: 9,
+    fontSize: 7,
     fontFamily: 'Helvetica-Bold',
   },
 
   servingSizeValue: {
-    fontSize: 9,
+    fontSize: 7,
     fontFamily: 'Helvetica',
   },
 
-  // Calories section - 22pt bold value
+  // Calories section - scaled for 2" width
   caloriesSection: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingLeft: 4,
-    paddingRight: 4,
+    paddingTop: 2,
+    paddingBottom: 2,
+    paddingLeft: 3,
+    paddingRight: 3,
   },
 
   caloriesHeader: {
-    fontSize: 8,
+    fontSize: 6,
     fontFamily: 'Helvetica-Bold',
   },
 
@@ -339,24 +341,24 @@ const styles = StyleSheet.create({
   },
 
   caloriesLabel: {
-    fontSize: 16,
+    fontSize: 12,
     fontFamily: 'Helvetica-Bold',
   },
 
   caloriesValue: {
-    fontSize: 22,
+    fontSize: 16,
     fontFamily: 'Helvetica-Bold',
   },
 
   // % DV header row
   dvHeader: {
-    fontSize: 8,
+    fontSize: 6,
     fontFamily: 'Helvetica-Bold',
     textAlign: 'right',
-    paddingTop: 2,
-    paddingBottom: 2,
-    paddingLeft: 4,
-    paddingRight: 4,
+    paddingTop: 1,
+    paddingBottom: 1,
+    paddingLeft: 3,
+    paddingRight: 3,
   },
 
   // Nutrient row
@@ -364,65 +366,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    paddingTop: 2,
-    paddingBottom: 2,
-    paddingLeft: 4,
-    paddingRight: 4,
+    paddingTop: 1,
+    paddingBottom: 1,
+    paddingLeft: 3,
+    paddingRight: 3,
   },
 
   nutrientName: {
-    fontSize: 8,
+    fontSize: 6,
     fontFamily: 'Helvetica-Bold',
   },
 
   nutrientValue: {
-    fontSize: 8,
+    fontSize: 6,
     fontFamily: 'Helvetica',
   },
 
   nutrientDv: {
-    fontSize: 8,
+    fontSize: 6,
     fontFamily: 'Helvetica-Bold',
   },
 
   // Indented nutrients (sub-nutrients)
   indent1: {
-    paddingLeft: 12,
+    paddingLeft: 8,
   },
 
   indent2: {
-    paddingLeft: 20,
+    paddingLeft: 14,
   },
 
-  // Footnote section - 6pt
+  // Footnote section - 5pt
   footnoteSection: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingLeft: 4,
-    paddingRight: 4,
+    paddingTop: 2,
+    paddingBottom: 2,
+    paddingLeft: 3,
+    paddingRight: 3,
   },
 
   footnote: {
-    fontSize: 6,
+    fontSize: 5,
     fontFamily: 'Helvetica',
     lineHeight: 1.3,
   },
 
   // "Not a significant source" statement
   notSignificant: {
-    fontSize: 6,
+    fontSize: 5,
     fontFamily: 'Helvetica',
     fontStyle: 'italic',
-    paddingTop: 2,
-    paddingBottom: 4,
-    paddingLeft: 4,
-    paddingRight: 4,
+    paddingTop: 1,
+    paddingBottom: 2,
+    paddingLeft: 3,
+    paddingRight: 3,
   },
 
   // Ingredient statement section
   ingredientSection: {
-    marginTop: 24,
-    width: 400,
+    marginTop: 16,
+    width: 300,
   },
 
   ingredientTitle: {
