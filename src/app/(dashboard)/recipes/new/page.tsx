@@ -78,6 +78,33 @@ export default function NewRecipePage() {
         setRecipeIngredients(prev => prev.filter(ri => ri.ingredient_id !== id));
     };
 
+    const handleUpdateIngredientName = (id: string, newName: string) => {
+        setRecipeIngredients(prev => prev.map(ri => {
+            if (ri.ingredient_id === id) {
+                return {
+                    ...ri,
+                    ingredient: {
+                        ...ri.ingredient,
+                        name: newName,
+                    },
+                };
+            }
+            return ri;
+        }));
+    };
+
+    const handleUpdateIngredientAmount = (id: string, newAmount: number) => {
+        setRecipeIngredients(prev => prev.map(ri => {
+            if (ri.ingredient_id === id) {
+                return {
+                    ...ri,
+                    amount_g: newAmount,
+                };
+            }
+            return ri;
+        }));
+    };
+
     // Handle AI-generated ingredient suggestions
     const handleApplyAISuggestions = (suggestions: {
         yield_g: number;
@@ -432,10 +459,9 @@ export default function NewRecipePage() {
                         {recipeIngredients.length > 0 ? (
                             <div className="space-y-2 mt-4">
                                 {/* Table Header */}
-                                <div className="grid grid-cols-[32px_80px_1fr_80px_60px] gap-2 px-3 py-2 text-xs font-medium text-slate-500 border-b border-slate-700">
+                                <div className="grid grid-cols-[32px_1fr_100px_40px] gap-2 px-3 py-2 text-xs font-medium text-slate-500 border-b border-slate-700">
                                     <span>#</span>
-                                    <span>Code</span>
-                                    <span>Name</span>
+                                    <span>Name (editable)</span>
                                     <span>Amount</span>
                                     <span></span>
                                 </div>
@@ -443,18 +469,30 @@ export default function NewRecipePage() {
                                 {recipeIngredients.map((ri, index) => (
                                     <div
                                         key={ri.ingredient_id}
-                                        className="grid grid-cols-[32px_80px_1fr_80px_60px] gap-2 items-center p-3 bg-slate-700/50 rounded-lg"
+                                        className="grid grid-cols-[32px_1fr_100px_40px] gap-2 items-center p-3 bg-slate-700/50 rounded-lg"
                                     >
                                         <span className="text-slate-500">{index + 1}.</span>
-                                        <span className="font-mono text-xs text-emerald-400">
-                                            {ri.ingredient.user_code || '—'}
-                                        </span>
                                         <div className="min-w-0">
-                                            <p className="text-white font-medium truncate" title={ri.ingredient.name}>
-                                                {truncateText(ri.ingredient.name)}
-                                            </p>
+                                            <Input
+                                                value={ri.ingredient.name}
+                                                onChange={(e) => handleUpdateIngredientName(ri.ingredient_id, e.target.value)}
+                                                className="bg-slate-600/50 border-slate-500 text-white text-sm h-8"
+                                                placeholder="Ingredient name"
+                                            />
+                                            {'source' in ri.ingredient && ri.ingredient.source === 'usda' && (
+                                                <span className="text-xs text-blue-400 mt-1 block">USDA #{ri.ingredient.usda_fdc_id}</span>
+                                            )}
                                         </div>
-                                        <span className="text-slate-300">{ri.amount_g}g</span>
+                                        <div className="flex items-center gap-1">
+                                            <Input
+                                                type="number"
+                                                step="any"
+                                                value={ri.amount_g}
+                                                onChange={(e) => handleUpdateIngredientAmount(ri.ingredient_id, parseFloat(e.target.value) || 0)}
+                                                className="bg-slate-600/50 border-slate-500 text-white text-sm h-8 w-20"
+                                            />
+                                            <span className="text-slate-400 text-sm">g</span>
+                                        </div>
                                         <Button
                                             type="button"
                                             variant="ghost"
