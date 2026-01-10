@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { IngredientSearch, IngredientSearchResult } from '@/components/ingredients/ingredient-search';
 import { RACCCategorySelector } from '@/components/recipes/racc-category-selector';
+import { AIRecipeSuggester } from '@/components/recipes/ai-recipe-suggester';
 import { toast } from 'sonner';
 import type { Tables } from '@/lib/database.types';
 
@@ -75,6 +76,53 @@ export default function NewRecipePage() {
 
     const handleRemoveIngredient = (id: string) => {
         setRecipeIngredients(prev => prev.filter(ri => ri.ingredient_id !== id));
+    };
+
+    // Handle AI-generated ingredient suggestions
+    const handleApplyAISuggestions = (suggestions: {
+        yield_g: number;
+        serving_size_g: number;
+        serving_description: string;
+        ingredients: Array<{
+            name: string;
+            amount_g: number;
+            usda_fdc_id: number;
+            calories: number | null;
+            total_fat_g: number | null;
+            sodium_mg: number | null;
+            total_carbohydrates_g: number | null;
+            protein_g: number | null;
+        }>;
+    }) => {
+        // Update form data with suggested values
+        setFormData(prev => ({
+            ...prev,
+            recipe_yield_g: suggestions.yield_g.toString(),
+            serving_size_g: suggestions.serving_size_g.toString(),
+            serving_size_description: suggestions.serving_description,
+        }));
+
+        // Add AI-suggested ingredients as USDA ingredients
+        const newIngredients: RecipeIngredient[] = suggestions.ingredients.map((ing) => ({
+            ingredient_id: `usda-${ing.usda_fdc_id}`,
+            ingredient: {
+                id: `usda-${ing.usda_fdc_id}`,
+                name: ing.name,
+                user_code: null,
+                brand: null,
+                calories: ing.calories,
+                sodium_mg: ing.sodium_mg,
+                protein_g: ing.protein_g,
+                total_fat_g: ing.total_fat_g,
+                total_carbohydrates_g: ing.total_carbohydrates_g,
+                updated_at: new Date().toISOString(),
+                source: 'usda' as const,
+                usda_fdc_id: ing.usda_fdc_id,
+            },
+            amount_g: ing.amount_g,
+        }));
+
+        setRecipeIngredients(newIngredients);
     };
 
     // Calculate total weight and estimated nutrition
@@ -266,6 +314,14 @@ export default function NewRecipePage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* AI Ingredient Suggester */}
+                {formData.name.trim() && (
+                    <AIRecipeSuggester
+                        recipeName={formData.name}
+                        onApplySuggestions={handleApplyAISuggestions}
+                    />
+                )}
 
                 {/* FDA RACC Category */}
                 <Card className="bg-slate-800/50 border-slate-700">

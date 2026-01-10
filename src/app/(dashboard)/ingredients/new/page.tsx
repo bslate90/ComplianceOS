@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { IngredientForm, IngredientFormData } from '@/components/ingredients/ingredient-form';
 import { USDASearchModal } from '@/components/ingredients/usda-search-modal';
+import { AIIngredientFinder } from '@/components/ingredients/ai-ingredient-finder';
 import { Button } from '@/components/ui/button';
 import type { MappedIngredient } from '@/lib/usda/mappers';
 
@@ -43,6 +44,57 @@ export default function NewIngredientPage() {
         });
     };
 
+    const handleAIIngredientSelect = (ingredient: {
+        name: string;
+        usda_fdc_id: number;
+        serving_size_g: number;
+        calories: number | null;
+        total_fat_g: number | null;
+        saturated_fat_g: number | null;
+        trans_fat_g: number | null;
+        cholesterol_mg: number | null;
+        sodium_mg: number | null;
+        total_carbohydrates_g: number | null;
+        dietary_fiber_g: number | null;
+        total_sugars_g: number | null;
+        protein_g: number | null;
+        vitamin_d_mcg: number | null;
+        calcium_mg: number | null;
+        iron_mg: number | null;
+        potassium_mg: number | null;
+    }) => {
+        setImportedData({
+            name: ingredient.name,
+            brand: '',
+            usda_fdc_id: ingredient.usda_fdc_id,
+            serving_size_g: ingredient.serving_size_g,
+            calories: ingredient.calories,
+            total_fat_g: ingredient.total_fat_g,
+            saturated_fat_g: ingredient.saturated_fat_g,
+            trans_fat_g: ingredient.trans_fat_g,
+            cholesterol_mg: ingredient.cholesterol_mg,
+            sodium_mg: ingredient.sodium_mg,
+            total_carbohydrates_g: ingredient.total_carbohydrates_g,
+            dietary_fiber_g: ingredient.dietary_fiber_g,
+            total_sugars_g: ingredient.total_sugars_g,
+            added_sugars_g: null,
+            protein_g: ingredient.protein_g,
+            vitamin_d_mcg: ingredient.vitamin_d_mcg,
+            calcium_mg: ingredient.calcium_mg,
+            iron_mg: ingredient.iron_mg,
+            potassium_mg: ingredient.potassium_mg,
+            contains_milk: false,
+            contains_eggs: false,
+            contains_fish: false,
+            contains_shellfish: false,
+            contains_tree_nuts: false,
+            contains_peanuts: false,
+            contains_wheat: false,
+            contains_soybeans: false,
+            contains_sesame: false,
+        });
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -60,6 +112,9 @@ export default function NewIngredientPage() {
                     Search USDA Database
                 </Button>
             </div>
+
+            {/* AI-Powered USDA Search */}
+            <AIIngredientFinder onSelectIngredient={handleAIIngredientSelect} />
 
             <IngredientForm initialData={importedData || undefined} key={importedData?.name || 'new'} />
 
