@@ -191,9 +191,9 @@ export function LabelEditor({
     return (
         <div className="grid gap-6 lg:grid-cols-2">
             {/* Left: Editor Controls */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
                 <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
+                    <CardTitle className="text-foreground flex items-center gap-2">
                         Label Editor
                         <Badge className="bg-purple-600">Editable</Badge>
                     </CardTitle>
@@ -201,7 +201,7 @@ export function LabelEditor({
                 <CardContent className="space-y-4">
                     {/* Format Selector */}
                     <div className="space-y-2">
-                        <Label className="text-slate-200">Label Format</Label>
+                        <Label className="text-foreground">Label Format</Label>
                         <div className="flex gap-2">
                             {(Object.keys(FORMAT_INFO) as LabelFormat[]).map((f) => (
                                 <Button
@@ -210,7 +210,7 @@ export function LabelEditor({
                                     variant={format === f ? 'default' : 'outline'}
                                     size="sm"
                                     onClick={() => setFormat(f)}
-                                    className={format === f ? 'bg-emerald-600' : 'border-slate-600'}
+                                    className={format === f ? 'bg-primary' : 'border-border'}
                                 >
                                     {FORMAT_INFO[f].name}
                                 </Button>
@@ -221,7 +221,7 @@ export function LabelEditor({
                     {/* Size Presets */}
                     {format === 'standard' && (
                         <div className="space-y-2">
-                            <Label className="text-slate-200">Label Size Preset</Label>
+                            <Label className="text-foreground">Label Size Preset</Label>
                             <div className="flex gap-2">
                                 {(['large', 'medium', 'small'] as LabelSize[]).map((s) => (
                                     <Button
@@ -233,7 +233,7 @@ export function LabelEditor({
                                             handleSizePreset(s);
                                             setUseCustomSize(false);
                                         }}
-                                        className={size === s && !useCustomSize ? 'bg-purple-600' : 'border-slate-600'}
+                                        className={size === s && !useCustomSize ? 'bg-purple-600' : 'border-border'}
                                     >
                                         {s.charAt(0).toUpperCase() + s.slice(1)}
                                     </Button>
@@ -243,7 +243,7 @@ export function LabelEditor({
                                     variant={useCustomSize ? 'default' : 'outline'}
                                     size="sm"
                                     onClick={() => setUseCustomSize(true)}
-                                    className={useCustomSize ? 'bg-orange-600' : 'border-slate-600'}
+                                    className={useCustomSize ? 'bg-orange-600' : 'border-border'}
                                 >
                                     Custom
                                 </Button>
@@ -253,25 +253,25 @@ export function LabelEditor({
 
                     {/* Custom Size */}
                     {useCustomSize && (
-                        <div className="grid grid-cols-2 gap-4 p-3 bg-slate-900/50 rounded-lg">
+                        <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
                             <div className="space-y-1">
-                                <Label className="text-xs text-slate-400">Width (px)</Label>
+                                <Label className="text-xs text-muted-foreground">Width (px)</Label>
                                 <Input
                                     type="number"
                                     value={customWidth}
                                     onChange={(e) => setCustomWidth(parseInt(e.target.value) || 100)}
-                                    className="bg-slate-700 border-slate-600 text-white"
+                                    className="bg-muted/50 border-border text-foreground"
                                     min={100}
                                     max={500}
                                 />
                             </div>
                             <div className="space-y-1">
-                                <Label className="text-xs text-slate-400">Height (px)</Label>
+                                <Label className="text-xs text-muted-foreground">Height (px)</Label>
                                 <Input
                                     type="number"
                                     value={customHeight}
                                     onChange={(e) => setCustomHeight(parseInt(e.target.value) || 100)}
-                                    className="bg-slate-700 border-slate-600 text-white"
+                                    className="bg-muted/50 border-border text-foreground"
                                     min={100}
                                     max={800}
                                 />
@@ -298,21 +298,21 @@ export function LabelEditor({
 
                     {/* Ingredient Statement */}
                     <div className="space-y-2">
-                        <Label className="text-slate-200">Ingredient Statement</Label>
+                        <Label className="text-foreground">Ingredient Statement</Label>
                         <Textarea
                             value={ingredientStatement}
                             onChange={(e) => setIngredientStatement(e.target.value)}
-                            className="bg-slate-700/50 border-slate-600 text-white min-h-[100px]"
+                            className="bg-muted/50 border-border text-foreground min-h-[100px]"
                         />
                     </div>
 
                     {/* Allergen Statement */}
                     <div className="space-y-2">
-                        <Label className="text-slate-200">Allergen Statement (optional)</Label>
+                        <Label className="text-foreground">Allergen Statement (optional)</Label>
                         <Textarea
                             value={allergenStatement}
                             onChange={(e) => setAllergenStatement(e.target.value)}
-                            className="bg-slate-700/50 border-slate-600 text-white"
+                            className="bg-muted/50 border-border text-foreground"
                             placeholder="Contains: ..."
                         />
                     </div>
@@ -328,9 +328,9 @@ export function LabelEditor({
             </Card>
 
             {/* Right: Live Preview */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
                 <CardHeader>
-                    <CardTitle className="text-white flex items-center justify-between">
+                    <CardTitle className="text-foreground flex items-center justify-between">
                         <span>Preview: {recipeName}</span>
                         <Badge className={hasWarnings ? 'bg-red-500' : 'bg-emerald-500'}>
                             {hasWarnings ? 'Non-Compliant' : 'FDA 2020'}
@@ -340,7 +340,7 @@ export function LabelEditor({
                 <CardContent className="space-y-4">
                     {/* Scaled Preview */}
                     <div
-                        className="flex justify-center overflow-auto p-4 bg-slate-900/50 rounded-lg"
+                        className="flex justify-center overflow-auto p-4 bg-muted rounded-lg"
                         style={{
                             transform: useCustomSize ? `scale(${Math.min(scale, 1)})` : undefined,
                             transformOrigin: 'top center',
@@ -356,9 +356,9 @@ export function LabelEditor({
                     </div>
 
                     {/* Ingredient Statement Preview */}
-                    <div className="bg-slate-700/50 rounded-lg p-4">
-                        <h3 className="text-sm font-semibold text-slate-300 mb-2">INGREDIENTS:</h3>
-                        <p className="text-white text-sm leading-relaxed">{ingredientStatement}</p>
+                    <div className="bg-muted/50 rounded-lg p-4">
+                        <h3 className="text-sm font-semibold text-foreground mb-2">INGREDIENTS:</h3>
+                        <p className="text-foreground text-sm leading-relaxed">{ingredientStatement}</p>
                     </div>
 
                     {/* Allergen Statement Preview */}
@@ -370,7 +370,7 @@ export function LabelEditor({
                     )}
 
                     {/* Size Info */}
-                    <div className="text-xs text-slate-500 pt-2 border-t border-slate-700">
+                    <div className="text-xs text-muted-foreground pt-2 border-t border-border">
                         <span className="font-medium">Dimensions:</span> {useCustomSize ? `${customWidth}×${customHeight}px (custom)` : `${LABEL_SIZES[size].width}×${LABEL_SIZES[size].height}px`}
                     </div>
                 </CardContent>

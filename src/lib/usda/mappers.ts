@@ -1,4 +1,5 @@
 import type { USDASearchResult, USDANutrient } from './api';
+import { detectAllergensFromUSDA, type AllergenFlags } from './allergen-detector';
 
 /**
  * USDA Nutrient IDs to our database fields mapping
@@ -25,7 +26,7 @@ const NUTRIENT_ID_MAP: Record<number, string> = {
 /**
  * Mapped ingredient data ready for database
  */
-export interface MappedIngredient {
+export interface MappedIngredient extends AllergenFlags {
     name: string;
     brand: string | null;
     usda_fdc_id: number;
@@ -45,6 +46,7 @@ export interface MappedIngredient {
     calcium_mg: number | null;
     iron_mg: number | null;
     potassium_mg: number | null;
+    ingredient_declaration: string | null;
 }
 
 /**
@@ -58,9 +60,17 @@ function findNutrientValue(nutrients: USDANutrient[], nutrientId: number): numbe
 /**
  * Map USDA food data to our ingredient schema
  * USDA data is typically per 100g serving
+ * Now includes automatic allergen detection
  */
 export function mapUSDAToIngredient(food: USDASearchResult): MappedIngredient {
     const nutrients = food.foodNutrients || [];
+
+    // Detect allergens from the food description and category
+    const allergenFlags = detectAllergensFromUSDA(
+        food.description,
+        food.dataType, // Use dataType as a rough category indicator
+        food.brandName
+    );
 
     return {
         name: food.description,
@@ -82,6 +92,9 @@ export function mapUSDAToIngredient(food: USDASearchResult): MappedIngredient {
         calcium_mg: findNutrientValue(nutrients, 1087),
         iron_mg: findNutrientValue(nutrients, 1089),
         potassium_mg: findNutrientValue(nutrients, 1092),
+        ingredient_declaration: null, // Can be filled in manually later
+        // Spread the allergen flags
+        ...allergenFlags,
     };
 }
 
@@ -102,3 +115,4 @@ export function formatDataType(dataType: string): string {
             return dataType;
     }
 }
+

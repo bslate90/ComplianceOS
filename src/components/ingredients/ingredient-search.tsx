@@ -177,7 +177,7 @@ export function IngredientSearch({ onSelect, placeholder, className }: Ingredien
                         onFocus={() => setShowResults(true)}
                         onKeyDown={handleKeyDown}
                         placeholder={placeholder || 'Search by code, name, or USDA...'}
-                        className="bg-slate-700/50 border-slate-600 text-white"
+                        className="bg-muted/50 border-border text-foreground"
                     />
                     {loading && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -193,8 +193,8 @@ export function IngredientSearch({ onSelect, placeholder, className }: Ingredien
                     className={cn(
                         'shrink-0',
                         searchUSDA
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : 'border-slate-600 text-slate-400'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'border-border text-muted-foreground'
                     )}
                 >
                     + USDA
@@ -204,11 +204,11 @@ export function IngredientSearch({ onSelect, placeholder, className }: Ingredien
             {/* Results Dropdown */}
             {showResults && results.length > 0 && (
                 <div
-                    className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-80 overflow-y-auto"
+                    className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto"
                     onMouseLeave={() => setShowResults(false)}
                 >
                     {/* Header */}
-                    <div className="grid grid-cols-[80px_1fr_80px_70px] gap-2 px-3 py-2 text-xs font-medium text-slate-500 border-b border-slate-700 sticky top-0 bg-slate-800">
+                    <div className="grid grid-cols-[80px_1fr_80px_70px] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-popover">
                         <span>Code</span>
                         <span>Name</span>
                         <span>Top Nutrient</span>
@@ -229,18 +229,18 @@ export function IngredientSearch({ onSelect, placeholder, className }: Ingredien
                                 className={cn(
                                     'w-full grid grid-cols-[80px_1fr_80px_70px] gap-2 px-3 py-2 text-left transition-colors',
                                     index === selectedIndex
-                                        ? 'bg-emerald-600/20'
-                                        : 'hover:bg-slate-700'
+                                        ? 'bg-primary/20'
+                                        : 'hover:bg-muted'
                                 )}
                             >
                                 {/* Code */}
-                                <span className="font-mono text-xs text-emerald-400 truncate">
+                                <span className="font-mono text-xs text-primary truncate">
                                     {result.user_code || '—'}
                                 </span>
 
                                 {/* Name */}
                                 <div className="flex items-center gap-2 min-w-0">
-                                    <span className="text-white text-sm truncate" title={result.name}>
+                                    <span className="text-foreground text-sm truncate" title={result.name}>
                                         {truncateText(result.name)}
                                     </span>
                                     {result.source === 'usda' && (
@@ -251,12 +251,12 @@ export function IngredientSearch({ onSelect, placeholder, className }: Ingredien
                                 </div>
 
                                 {/* Top Nutrient */}
-                                <span className="text-xs text-slate-400 truncate">
+                                <span className="text-xs text-muted-foreground truncate">
                                     {topNutrient ? `${topNutrient.name}: ${topNutrient.value}` : '—'}
                                 </span>
 
                                 {/* Updated */}
-                                <span className="text-xs text-slate-500">
+                                <span className="text-xs text-muted-foreground">
                                     {formatDate(result.updated_at)}
                                 </span>
                             </button>
@@ -267,7 +267,7 @@ export function IngredientSearch({ onSelect, placeholder, className }: Ingredien
 
             {/* No Results */}
             {showResults && query.length >= 2 && !loading && results.length === 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-4 text-center text-slate-400 text-sm">
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg p-4 text-center text-muted-foreground text-sm">
                     No ingredients found. {!searchUSDA && 'Try enabling USDA search.'}
                 </div>
             )}

@@ -48,6 +48,7 @@ export interface IngredientFormData {
     contains_wheat: boolean;
     contains_soybeans: boolean;
     contains_sesame: boolean;
+    ingredient_declaration: string | null;
 }
 
 const defaultFormData: IngredientFormData = {
@@ -81,6 +82,7 @@ const defaultFormData: IngredientFormData = {
     contains_wheat: false,
     contains_soybeans: false,
     contains_sesame: false,
+    ingredient_declaration: null,
 };
 
 export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) {
@@ -158,67 +160,78 @@ export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Info */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
                 <CardHeader>
-                    <CardTitle className="text-white">Basic Information</CardTitle>
+                    <CardTitle className="text-foreground">Basic Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-3">
                         <div className="space-y-2">
-                            <Label htmlFor="name" className="text-slate-200">Ingredient Name *</Label>
+                            <Label htmlFor="name" className="text-foreground">Ingredient Name *</Label>
                             <Input
                                 id="name"
                                 value={formData.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
                                 required
-                                className="bg-slate-700/50 border-slate-600 text-white"
+                                className="bg-muted/50 border-border text-foreground"
                                 placeholder="e.g., All-Purpose Flour"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="brand" className="text-slate-200">Brand (optional)</Label>
+                            <Label htmlFor="brand" className="text-foreground">Brand (optional)</Label>
                             <Input
                                 id="brand"
                                 value={formData.brand ?? ''}
                                 onChange={(e) => handleChange('brand', e.target.value)}
-                                className="bg-slate-700/50 border-slate-600 text-white"
+                                className="bg-muted/50 border-border text-foreground"
                                 placeholder="e.g., King Arthur"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="user_code" className="text-slate-200">User Code (UDID)</Label>
+                            <Label htmlFor="user_code" className="text-foreground">User Code (UDID)</Label>
                             <Input
                                 id="user_code"
                                 value={formData.user_code ?? ''}
                                 onChange={(e) => handleChange('user_code', e.target.value.toUpperCase().slice(0, 25))}
-                                className="bg-slate-700/50 border-slate-600 text-white font-mono"
+                                className="bg-muted/50 border-border text-foreground font-mono"
                                 placeholder="e.g., SALT100"
                                 maxLength={25}
                             />
-                            <p className="text-xs text-slate-500">Quick lookup code (max 25 chars)</p>
+                            <p className="text-xs text-muted-foreground">Quick lookup code (max 25 chars)</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="ingredient_declaration" className="text-foreground">Ingredient Declaration</Label>
+                            <Input
+                                id="ingredient_declaration"
+                                value={formData.ingredient_declaration ?? ''}
+                                onChange={(e) => handleChange('ingredient_declaration', e.target.value || null)}
+                                className="bg-muted/50 border-border text-foreground"
+                                placeholder="e.g., ENRICHED WHEAT FLOUR (WHEAT FLOUR, NIACIN...)"
+                            />
+                            <p className="text-xs text-muted-foreground">How this ingredient appears on the label</p>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Nutrition Facts */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-white">Nutrition Facts</CardTitle>
-                            <p className="text-sm text-slate-400 mt-1">
+                            <CardTitle className="text-foreground">Nutrition Facts</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
                                 Enter values {formData.nutrition_basis === '100g' ? 'per 100g' : `per ${formData.serving_size_g}g serving`}
                             </p>
                         </div>
                         {/* Serving Basis Toggle */}
-                        <div className="flex items-center gap-2 bg-slate-900/50 rounded-lg p-1">
+                        <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
                             <button
                                 type="button"
                                 onClick={() => handleChange('nutrition_basis', '100g')}
                                 className={`px-3 py-1.5 text-sm rounded-md transition-all ${formData.nutrition_basis === '100g'
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'text-slate-400 hover:text-white'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-muted-foreground hover:text-foreground'
                                     }`}
                             >
                                 Per 100g
@@ -227,8 +240,8 @@ export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) 
                                 type="button"
                                 onClick={() => handleChange('nutrition_basis', 'serving')}
                                 className={`px-3 py-1.5 text-sm rounded-md transition-all ${formData.nutrition_basis === 'serving'
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'text-slate-400 hover:text-white'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-muted-foreground hover:text-foreground'
                                     }`}
                             >
                                 Per Serving
@@ -239,9 +252,9 @@ export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) 
                 <CardContent className="space-y-4">
                     {/* Serving Size - only show when per serving */}
                     {formData.nutrition_basis === 'serving' && (
-                        <div className="grid gap-4 md:grid-cols-4 pb-4 border-b border-slate-700">
+                        <div className="grid gap-4 md:grid-cols-4 pb-4 border-b border-border">
                             <div className="space-y-2">
-                                <Label htmlFor="serving_size_g" className="text-slate-300">Serving Size (g) *</Label>
+                                <Label htmlFor="serving_size_g" className="text-foreground">Serving Size (g) *</Label>
                                 <Input
                                     id="serving_size_g"
                                     type="number"
@@ -250,7 +263,7 @@ export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) 
                                     value={formData.serving_size_g ?? ''}
                                     onChange={(e) => handleNumberChange('serving_size_g', e.target.value)}
                                     required
-                                    className="bg-slate-700/50 border-slate-600 text-white"
+                                    className="bg-muted/50 border-border text-foreground"
                                 />
                             </div>
                         </div>
@@ -259,7 +272,7 @@ export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) 
                     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
                         {nutritionFields.map((field) => (
                             <div key={field.key} className="space-y-2">
-                                <Label htmlFor={field.key} className="text-slate-300 text-sm">
+                                <Label htmlFor={field.key} className="text-foreground text-sm">
                                     {field.label}
                                 </Label>
                                 <Input
@@ -269,7 +282,7 @@ export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) 
                                     min="0"
                                     value={String(formData[field.key as keyof IngredientFormData] ?? '')}
                                     onChange={(e) => handleNumberChange(field.key as keyof IngredientFormData, e.target.value)}
-                                    className="bg-slate-700/50 border-slate-600 text-white"
+                                    className="bg-muted/50 border-border text-foreground"
                                 />
                             </div>
                         ))}
@@ -278,9 +291,9 @@ export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) 
             </Card>
 
             {/* Allergens */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card border-border">
                 <CardHeader>
-                    <CardTitle className="text-white">Allergen Information</CardTitle>
+                    <CardTitle className="text-foreground">Allergen Information</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <AllergenCheckboxes
@@ -303,7 +316,7 @@ export function IngredientForm({ initialData, onSuccess }: IngredientFormProps) 
                     type="button"
                     variant="outline"
                     onClick={() => router.back()}
-                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                    className="border-border text-muted-foreground hover:text-foreground"
                 >
                     Cancel
                 </Button>

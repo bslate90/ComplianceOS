@@ -66,7 +66,7 @@ const CATEGORY_COLORS: Record<string, string> = {
     fats: 'bg-yellow-500/20 text-yellow-400',
     sweeteners: 'bg-pink-500/20 text-pink-400',
     seasonings: 'bg-purple-500/20 text-purple-400',
-    other: 'bg-slate-500/20 text-slate-400',
+    other: 'bg-muted/50 text-muted-foreground',
 }
 
 export function AIRecipeSuggester({
@@ -166,9 +166,9 @@ export function AIRecipeSuggester({
     const selectedCount = Object.keys(selectedMatches).length
 
     return (
-        <Card className={cn('bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-700/50', className)}>
+        <Card className={cn('bg-gradient-to-br from-purple-900/30 to-blue-900/30 dark:from-purple-900/30 dark:to-blue-900/30 border-purple-700/50', className)}>
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                     <span className="text-xl">✨</span>
                     AI Ingredient Suggester
                     <Badge variant="outline" className="text-purple-400 border-purple-600 text-xs font-normal">
@@ -179,7 +179,7 @@ export function AIRecipeSuggester({
             <CardContent className="space-y-4">
                 {!suggestions ? (
                     <div className="text-center py-4">
-                        <p className="text-slate-400 mb-4">
+                        <p className="text-muted-foreground mb-4">
                             Let AI suggest typical ingredients for &quot;{recipeName || 'your recipe'}&quot; with matching USDA nutrition data
                         </p>
                         <Button
@@ -204,17 +204,17 @@ export function AIRecipeSuggester({
                     <div className="space-y-4">
                         {/* Summary */}
                         <div className="grid grid-cols-3 gap-3 text-center">
-                            <div className="p-3 bg-slate-800/50 rounded-lg">
-                                <p className="text-xs text-slate-400">Est. Yield</p>
-                                <p className="text-lg font-semibold text-white">{suggestions.estimated_yield_g}g</p>
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Est. Yield</p>
+                                <p className="text-lg font-semibold text-foreground">{suggestions.estimated_yield_g}g</p>
                             </div>
-                            <div className="p-3 bg-slate-800/50 rounded-lg">
-                                <p className="text-xs text-slate-400">Serving Size</p>
-                                <p className="text-lg font-semibold text-white">{suggestions.suggested_serving_size_g}g</p>
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Serving Size</p>
+                                <p className="text-lg font-semibold text-foreground">{suggestions.suggested_serving_size_g}g</p>
                             </div>
-                            <div className="p-3 bg-slate-800/50 rounded-lg">
-                                <p className="text-xs text-slate-400">Ingredients</p>
-                                <p className="text-lg font-semibold text-white">{suggestions.ingredients.length}</p>
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Ingredients</p>
+                                <p className="text-lg font-semibold text-foreground">{suggestions.ingredients.length}</p>
                             </div>
                         </div>
 
@@ -223,11 +223,11 @@ export function AIRecipeSuggester({
                             {suggestions.ingredients.map((ing, index) => (
                                 <div
                                     key={index}
-                                    className="p-3 bg-slate-800/50 rounded-lg border border-slate-700"
+                                    className="p-3 bg-muted/50 rounded-lg border border-border"
                                 >
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-medium text-white">{ing.name}</span>
+                                            <span className="font-medium text-foreground">{ing.name}</span>
                                             <Badge className={cn('text-xs', CATEGORY_COLORS[ing.category] || CATEGORY_COLORS.other)}>
                                                 {ing.category}
                                             </Badge>
@@ -238,7 +238,7 @@ export function AIRecipeSuggester({
                                     {/* USDA Matches */}
                                     {ing.usda_matches.length > 0 ? (
                                         <div className="space-y-1">
-                                            <p className="text-xs text-slate-500">Select USDA match:</p>
+                                            <p className="text-xs text-muted-foreground">Select USDA match:</p>
                                             <div className="flex flex-wrap gap-1">
                                                 {ing.usda_matches.map((match) => (
                                                     <button
@@ -247,8 +247,8 @@ export function AIRecipeSuggester({
                                                         className={cn(
                                                             'text-xs px-2 py-1 rounded transition-colors',
                                                             selectedMatches[index]?.fdcId === match.fdcId
-                                                                ? 'bg-emerald-600 text-white'
-                                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'bg-muted text-muted-foreground hover:bg-accent'
                                                         )}
                                                         title={`${match.description} (${match.dataType}) - ${match.nutrients.calories || 0} cal/100g`}
                                                     >
@@ -272,8 +272,8 @@ export function AIRecipeSuggester({
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-700">
-                            <p className="text-sm text-slate-400">
+                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                            <p className="text-sm text-muted-foreground">
                                 {selectedCount} of {suggestions.ingredients.length} ingredients matched
                             </p>
                             <div className="flex gap-2">
@@ -281,7 +281,7 @@ export function AIRecipeSuggester({
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setSuggestions(null)}
-                                    className="border-slate-600 text-slate-300"
+                                    className="border-border text-muted-foreground hover:text-foreground"
                                 >
                                     Reset
                                 </Button>

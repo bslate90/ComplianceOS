@@ -39,9 +39,9 @@ export function LabelPreview({
     const [size, setSize] = useState<LabelSize>('large');
 
     return (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card border-border">
             <CardHeader>
-                <CardTitle className="text-white flex items-center justify-between">
+                <CardTitle className="text-foreground flex items-center justify-between">
                     <span>Label Preview: {recipeName}</span>
                     <Badge className="bg-emerald-500">FDA 2020</Badge>
                 </CardTitle>
@@ -50,15 +50,15 @@ export function LabelPreview({
                 <div className="flex flex-wrap gap-4 mt-3">
                     {/* Format Selector */}
                     <div className="space-y-1">
-                        <label className="text-xs text-slate-400">Label Format</label>
+                        <label className="text-xs text-muted-foreground">Label Format</label>
                         <div className="flex gap-1">
                             {(Object.keys(FORMAT_INFO) as LabelFormat[]).map((f) => (
                                 <button
                                     key={f}
                                     onClick={() => setFormat(f)}
                                     className={`px-2 py-1 text-xs rounded transition-all ${format === f
-                                            ? 'bg-emerald-600 text-white'
-                                            : 'bg-slate-700 text-slate-400 hover:text-white'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground hover:text-foreground'
                                         }`}
                                     title={FORMAT_INFO[f].desc}
                                 >
@@ -71,15 +71,15 @@ export function LabelPreview({
                     {/* Size Selector - only for standard format */}
                     {format === 'standard' && (
                         <div className="space-y-1">
-                            <label className="text-xs text-slate-400">Label Size</label>
+                            <label className="text-xs text-muted-foreground">Label Size</label>
                             <div className="flex gap-1">
                                 {(Object.keys(SIZE_INFO) as LabelSize[]).map((s) => (
                                     <button
                                         key={s}
                                         onClick={() => setSize(s)}
                                         className={`px-2 py-1 text-xs rounded transition-all ${size === s
-                                                ? 'bg-purple-600 text-white'
-                                                : 'bg-slate-700 text-slate-400 hover:text-white'
+                                            ? 'bg-purple-600 text-white'
+                                            : 'bg-muted text-muted-foreground hover:text-foreground'
                                             }`}
                                     >
                                         {SIZE_INFO[s]}
@@ -103,9 +103,9 @@ export function LabelPreview({
                 </div>
 
                 {/* Ingredient Statement */}
-                <div className="bg-slate-700/50 rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-slate-300 mb-2">INGREDIENTS:</h3>
-                    <p className="text-white text-sm leading-relaxed">{ingredientStatement}</p>
+                <div className="bg-muted/50 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-2">INGREDIENTS:</h3>
+                    <p className="text-foreground text-sm leading-relaxed">{ingredientStatement}</p>
                 </div>
 
                 {/* Allergen Statement */}
@@ -117,7 +117,7 @@ export function LabelPreview({
                 )}
 
                 {/* Format Info */}
-                <div className="text-xs text-slate-500 pt-2 border-t border-slate-700">
+                <div className="text-xs text-muted-foreground pt-2 border-t border-border">
                     <span className="font-medium">Format:</span> {FORMAT_INFO[format].name} — {FORMAT_INFO[format].desc}
                 </div>
             </CardContent>

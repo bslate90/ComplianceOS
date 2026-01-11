@@ -32,6 +32,8 @@ export interface IngredientNutrition {
     contains_wheat: boolean;
     contains_soybeans: boolean;
     contains_sesame: boolean;
+    // Ingredient declaration for label
+    ingredient_declaration: string | null;
 }
 
 /**
@@ -144,13 +146,14 @@ export function aggregateAllergens(ingredients: RecipeIngredient[]): AllergenSum
 
 /**
  * Generate ingredient statement (descending order by weight)
+ * Uses ingredient_declaration if available, otherwise falls back to name
  */
 export function generateIngredientStatement(ingredients: RecipeIngredient[]): string {
     // Sort by amount in descending order
     const sorted = [...ingredients].sort((a, b) => b.amount_g - a.amount_g);
 
-    // Join names with commas
-    const names = sorted.map(i => i.ingredient.name);
+    // Use ingredient_declaration if available, otherwise use name
+    const names = sorted.map(i => i.ingredient.ingredient_declaration || i.ingredient.name);
 
     return names.join(', ') + '.';
 }
