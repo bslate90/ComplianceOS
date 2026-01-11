@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { TraceGainsIntegrationSettings } from '@/components/integrations/tracegains-settings';
 
 interface OrganizationSettings {
     organization_id: string;
@@ -398,9 +399,15 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                 </TabsTrigger>
             </TabsList>
 
-            {/* Audit Log Tab - separate row for better visibility */}
-            <div className="flex justify-center">
+            {/* Audit Log & Integrations Tabs - separate row for better visibility */}
+            <div className="flex justify-center gap-2">
                 <TabsList className="bg-muted/50 p-1">
+                    <TabsTrigger value="integrations" className="text-xs sm:text-sm py-2 px-4">
+                        <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Integrations
+                    </TabsTrigger>
                     <TabsTrigger value="audit" className="text-xs sm:text-sm py-2 px-4">
                         <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1474,6 +1481,22 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                                 ))}
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+
+            {/* Integrations Tab */}
+            <TabsContent value="integrations" className="space-y-4">
+                <TraceGainsIntegrationSettings />
+
+                {/* Future integrations can be added here */}
+                <Card className="border shadow-card border-dashed border-border/50">
+                    <CardContent className="py-8 text-center">
+                        <svg className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <p className="text-sm text-muted-foreground">More integrations coming soon...</p>
+                        <p className="text-xs text-muted-foreground mt-1">Plex ERP, Genesis R&D, FoodLogiQ, and more</p>
                     </CardContent>
                 </Card>
             </TabsContent>

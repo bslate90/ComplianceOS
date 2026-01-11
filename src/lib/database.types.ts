@@ -97,6 +97,7 @@ export interface Database {
                     updated_at: string
                     user_code: string | null
                     ingredient_declaration: string | null
+                    tracegains_item_id: string | null
                 }
                 Insert: {
                     id?: string
@@ -133,6 +134,7 @@ export interface Database {
                     updated_at?: string
                     user_code?: string | null
                     ingredient_declaration?: string | null
+                    tracegains_item_id?: string | null
                 }
                 Update: {
                     id?: string
@@ -169,12 +171,154 @@ export interface Database {
                     updated_at?: string
                     user_code?: string | null
                     ingredient_declaration?: string | null
+                    tracegains_item_id?: string | null
                 }
                 Relationships: [
                     {
                         foreignKeyName: "ingredients_organization_id_fkey"
                         columns: ["organization_id"]
                         referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            tracegains_credentials: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    api_key_encrypted: string
+                    instance_url: string
+                    is_connected: boolean
+                    last_sync_at: string | null
+                    sync_status: string
+                    sync_error: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id: string
+                    api_key_encrypted: string
+                    instance_url?: string
+                    is_connected?: boolean
+                    last_sync_at?: string | null
+                    sync_status?: string
+                    sync_error?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    api_key_encrypted?: string
+                    instance_url?: string
+                    is_connected?: boolean
+                    last_sync_at?: string | null
+                    sync_status?: string
+                    sync_error?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "tracegains_credentials_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            tracegains_items: {
+                Row: {
+                    id: string
+                    organization_id: string
+                    tracegains_item_id: string
+                    name: string
+                    item_number: string | null
+                    category: string | null
+                    supplier_name: string | null
+                    specification_id: string | null
+                    last_updated_at: string | null
+                    raw_data: Record<string, unknown> | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    organization_id: string
+                    tracegains_item_id: string
+                    name: string
+                    item_number?: string | null
+                    category?: string | null
+                    supplier_name?: string | null
+                    specification_id?: string | null
+                    last_updated_at?: string | null
+                    raw_data?: Record<string, unknown> | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    organization_id?: string
+                    tracegains_item_id?: string
+                    name?: string
+                    item_number?: string | null
+                    category?: string | null
+                    supplier_name?: string | null
+                    specification_id?: string | null
+                    last_updated_at?: string | null
+                    raw_data?: Record<string, unknown> | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "tracegains_items_organization_id_fkey"
+                        columns: ["organization_id"]
+                        referencedRelation: "organizations"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            ingredient_tracegains_links: {
+                Row: {
+                    id: string
+                    ingredient_id: string
+                    tracegains_item_id: string
+                    linked_by: string | null
+                    auto_sync: boolean
+                    last_synced_at: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    ingredient_id: string
+                    tracegains_item_id: string
+                    linked_by?: string | null
+                    auto_sync?: boolean
+                    last_synced_at?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    ingredient_id?: string
+                    tracegains_item_id?: string
+                    linked_by?: string | null
+                    auto_sync?: boolean
+                    last_synced_at?: string | null
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "ingredient_tracegains_links_ingredient_id_fkey"
+                        columns: ["ingredient_id"]
+                        referencedRelation: "ingredients"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "ingredient_tracegains_links_tracegains_item_id_fkey"
+                        columns: ["tracegains_item_id"]
+                        referencedRelation: "tracegains_items"
                         referencedColumns: ["id"]
                     }
                 ]
