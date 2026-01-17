@@ -176,8 +176,8 @@ export default function PlexIntegrationSettings() {
                             </div>
                         </div>
                         <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${status?.active
-                                ? 'bg-green-500/10 text-green-500 border border-green-500/20'
-                                : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                            ? 'bg-green-500/10 text-green-500 border border-green-500/20'
+                            : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
                             }`}>
                             {status?.active ? 'Connected' : 'Not Connected'}
                         </div>
@@ -221,7 +221,7 @@ export default function PlexIntegrationSettings() {
                         Incoming Webhook URL
                     </CardTitle>
                     <CardDescription className="text-xs">
-                        Configure this URL in PLEX to send formulation changes to ComplianceOS
+                        Configure this URL in PLEX to send formulation changes to Exodis
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
@@ -420,8 +420,8 @@ export default function PlexIntegrationSettings() {
                                 <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-2 h-2 rounded-full ${event.status === 'completed' ? 'bg-green-500' :
-                                                event.status === 'failed' ? 'bg-red-500' :
-                                                    event.status === 'processing' ? 'bg-blue-500' : 'bg-amber-500'
+                                            event.status === 'failed' ? 'bg-red-500' :
+                                                event.status === 'processing' ? 'bg-blue-500' : 'bg-amber-500'
                                             }`} />
                                         <div>
                                             <div className="text-sm font-medium">{event.event_type}</div>

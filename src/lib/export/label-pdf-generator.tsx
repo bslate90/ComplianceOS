@@ -1093,7 +1093,7 @@ const ComplianceReportPage: React.FC<ComplianceReportPageProps> = ({
 
       {/* Footer */}
       <View style={styles.pageFooter}>
-        <Text style={styles.footerText}>ComplianceOS FDA Label Compliance Report</Text>
+        <Text style={styles.footerText}>Exodis FDA Label Compliance Report</Text>
         <Text style={styles.footerText}>Generated: {new Date().toISOString()}</Text>
       </View>
     </Page>

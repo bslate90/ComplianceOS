@@ -1,8 +1,8 @@
-# ComplianceOS 🏷️
+# Exodis 🏷️
 
 **FDA-compliant Nutrition Facts Label Management System**
 
-ComplianceOS is a comprehensive web application for food manufacturers to create, manage, and validate FDA-compliant Nutrition Facts labels. Built with Next.js 19, Supabase, and modern React practices.
+Exodis is a comprehensive web application for food manufacturers to create, manage, and validate FDA-compliant Nutrition Facts labels. Built with Next.js 19, Supabase, and modern React practices.
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-16.1-black.svg)
@@ -85,8 +85,8 @@ ComplianceOS is a comprehensive web application for food manufacturers to create
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/bslate90/ComplianceOS.git
-cd ComplianceOS
+git clone https://github.com/bslate90/Exodis.git
+cd Exodis
 ```
 
 ### 2. Install Dependencies
@@ -154,7 +154,7 @@ Open [http://localhost:3002](http://localhost:3002) to view the application.
 ## 📁 Project Structure
 
 ```
-ComplianceOS/
+Exodis/
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   ├── (auth)/             # Authentication pages (login, register)
@@ -300,7 +300,7 @@ The system validates against 31+ FDA 21 CFR 101.9 rules including:
 
 ## 📄 License
 
-This is a private repository. All rights reserved.
+This is a private repository owned by Brett Slater. All rights reserved.
 
 ---
 

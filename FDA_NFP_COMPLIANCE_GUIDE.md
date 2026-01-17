@@ -1,6 +1,6 @@
 # FDA Nutrition Facts Panel (NFP) Compliance System
 
-This document describes the comprehensive FDA NFP compliance system that has been integrated into ComplianceOS.
+This document describes the comprehensive FDA NFP compliance system that has been integrated into Exodis.
 
 ## Overview
 

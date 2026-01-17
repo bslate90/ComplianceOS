@@ -41,7 +41,7 @@ export async function GET() {
         .limit(10);
 
     // Generate webhook URL for this organization
-    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://complianceos.com'}/api/webhooks/plex/${profile.organization_id}`;
+    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://exodis.com'}/api/webhooks/plex/${profile.organization_id}`;
 
     return NextResponse.json({
         config: config ? {

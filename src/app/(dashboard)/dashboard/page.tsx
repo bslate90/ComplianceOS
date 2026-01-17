@@ -59,7 +59,7 @@ export default async function DashboardPage() {
         <div className="space-y-6 animate-fade-in">
             {/* Welcome section */}
             <div className="pb-2">
-                <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Welcome to ComplianceOS</h1>
+                <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Welcome to Exodis</h1>
                 <p className="mt-1 text-sm text-muted-foreground">FDA-compliant nutrition label generation</p>
             </div>
 

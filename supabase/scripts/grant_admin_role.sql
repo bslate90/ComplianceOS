@@ -1,5 +1,5 @@
 -- =====================================================
--- Admin Role Assignment Script for ComplianceOS
+-- Admin Role Assignment Script for Exodis
 -- =====================================================
 -- User: slaterinnovations@outlook.com
 -- 

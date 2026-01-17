@@ -378,6 +378,6 @@ export async function GET(
             'formulation.updated',
             'formulation.deleted',
         ],
-        documentation: 'https://docs.complianceos.com/integrations/plex',
+        documentation: 'https://docs.exodis.com/integrations/plex',
     });
 }

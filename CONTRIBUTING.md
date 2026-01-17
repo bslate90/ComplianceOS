@@ -1,6 +1,6 @@
-# ComplianceOS - Developer Onboarding Guide
+# Exodis - Developer Onboarding Guide
 
-Welcome to ComplianceOS! This guide will help you get started with developing new features using the Antigravity IDE.
+Welcome to Exodis! This guide will help you get started with developing new features using the Antigravity IDE.
 
 ## 🚀 Quick Start
 
@@ -14,8 +14,8 @@ Welcome to ComplianceOS! This guide will help you get started with developing ne
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/bslate90/ComplianceOS.git
-cd ComplianceOS
+git clone https://github.com/bslate90/Exodis.git
+cd Exodis
 
 # 2. Install dependencies
 npm install
@@ -37,7 +37,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-ComplianceOS/
+Exodis/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── (auth)/             # Auth pages (login, register)

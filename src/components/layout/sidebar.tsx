@@ -113,7 +113,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                     {loading ? (
                         <span className="inline-block w-24 h-4 bg-muted rounded animate-pulse" />
                     ) : (
-                        branding?.organization_name || 'ComplianceOS'
+                        branding?.organization_name || 'Exodis'
                     )}
                 </span>
             </div>

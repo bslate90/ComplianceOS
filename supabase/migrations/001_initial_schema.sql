@@ -1,4 +1,4 @@
--- ComplianceOS Database Schema
+-- Exodis Database Schema
 -- Run this in Supabase SQL Editor
 
 -- Enable UUID extension

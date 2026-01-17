@@ -28,7 +28,7 @@ const defaultBranding: BrandingSettings = {
     company_phone: null,
     company_website: null,
     footer_text: null,
-    organization_name: 'ComplianceOS',
+    organization_name: 'Exodis',
 };
 
 const BrandingContext = createContext<BrandingContextType>({
@@ -159,10 +159,10 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
 
                 // Get organization name if available
                 const orgRes = await fetch('/api/organization/info');
-                let organizationName = 'ComplianceOS';
+                let organizationName = 'Exodis';
                 if (orgRes.ok) {
                     const orgData = await orgRes.json();
-                    organizationName = orgData.name || 'ComplianceOS';
+                    organizationName = orgData.name || 'Exodis';
                 }
 
                 const brandingData: BrandingSettings = {

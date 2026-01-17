@@ -304,7 +304,7 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `complianceos-${dataType}-${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `exodis-${dataType}-${new Date().toISOString().split('T')[0]}.json`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -1280,7 +1280,7 @@ export default function OrganizationSettingsForm({ isAdmin, organizationId, orga
                                         </svg>
                                         <div className="text-sm font-medium mb-1">Upload JSON file</div>
                                         <div className="text-xs text-muted-foreground mb-4">
-                                            Supports ComplianceOS export files
+                                            Supports Exodis export files
                                         </div>
                                         <label htmlFor="import-file">
                                             <input

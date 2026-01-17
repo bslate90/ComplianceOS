@@ -110,7 +110,7 @@ export default function RegisterPage() {
                         </svg>
                     </div>
                     <div className="flex flex-col items-start gap-1">
-                        <span className="text-xl sm:text-2xl font-bold text-white tracking-tight">ComplianceOS</span>
+                        <span className="text-xl sm:text-2xl font-bold text-white tracking-tight">Exodis</span>
                         <span className="text-sm sm:text-base text-slate-500 font-medium">FDA Nutrition Labels</span>
                     </div>
                 </div>

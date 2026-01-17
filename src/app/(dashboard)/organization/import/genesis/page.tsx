@@ -39,7 +39,7 @@ export default async function GenesisImportPage() {
                         Genesis R&D Classic Import
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Migrate your data from Genesis R&D Classic to ComplianceOS
+                        Migrate your data from Genesis R&D Classic to Exodis
                     </p>
                 </div>
             </div>
@@ -60,8 +60,8 @@ export default async function GenesisImportPage() {
                         <p className="text-muted-foreground">
                             If you&apos;re having trouble exporting from Genesis or importing your data,
                             contact our support team at{' '}
-                            <a href="mailto:support@complianceos.com" className="text-primary hover:underline">
-                                support@complianceos.com
+                            <a href="mailto:support@exodis.com" className="text-primary hover:underline">
+                                support@exodis.com
                             </a>
                         </p>
                     </div>

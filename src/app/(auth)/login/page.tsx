@@ -53,7 +53,7 @@ export default function LoginPage() {
                         </svg>
                     </div>
                     <div className="flex flex-col items-start gap-1">
-                        <span className="text-xl sm:text-2xl font-bold text-white tracking-tight">ComplianceOS</span>
+                        <span className="text-xl sm:text-2xl font-bold text-white tracking-tight">Exodis</span>
                         <span className="text-sm sm:text-base text-slate-500 font-medium">FDA Nutrition Labels</span>
                     </div>
                 </div>
@@ -145,7 +145,7 @@ export default function LoginPage() {
                             <div className="w-full border-t border-slate-700" />
                         </div>
                         <div className="relative flex justify-center text-xs sm:text-sm">
-                            <span className="px-3 sm:px-4 bg-slate-800/60 text-slate-500">New to ComplianceOS?</span>
+                            <span className="px-3 sm:px-4 bg-slate-800/60 text-slate-500">New to Exodis?</span>
                         </div>
                     </div>
 

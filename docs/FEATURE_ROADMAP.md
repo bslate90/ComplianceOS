@@ -1,8 +1,8 @@
-# ComplianceOS Feature Roadmap
+# Exodis Feature Roadmap
 
 ## Quality Management Module
 
-This document outlines the planned features for the ComplianceOS quality management expansion.
+This document outlines the planned features for the Exodis quality management expansion.
 
 ---
 

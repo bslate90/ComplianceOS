@@ -2,7 +2,7 @@
 
 ## Overview
 
-A complete FDA Nutrition Facts Panel (NFP) compliance validation and export system has been integrated into ComplianceOS. The system automatically validates labels against 31 FDA rules and generates compliant PDFs.
+A complete FDA Nutrition Facts Panel (NFP) compliance validation and export system has been integrated into Exodis. The system automatically validates labels against 31 FDA rules and generates compliant PDFs.
 
 ## What Was Built
 
